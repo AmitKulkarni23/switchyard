@@ -27,5 +27,5 @@ export async function detect(bytes: Uint8Array): Promise<Format> {
   const header = new Set((parseCsv(text.split(/\r?\n/, 1)[0] ?? "")[0] ?? []).map(normHeader));
   if (header.has("lineitemunblendedcost")) return "aws-cur-csv";
   if (header.has("billedcost") && header.has("servicename")) return "focus-csv";
-  throw new UnsupportedFormatError("the CSV header matches no known bill format.");
+  throw new UnsupportedFormatError("this is not a PDF, and its first line matches no known bill CSV header.");
 }

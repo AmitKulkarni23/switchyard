@@ -16,6 +16,6 @@ test("CUR 2.0 snake_case headers are recognized", async () => {
 
 test("rejects unknown content with a clear error", async () => {
   await expect(detect(crypto.getRandomValues(new Uint8Array(512)).map((b, i) => (i === 0 ? 0 : b)))).rejects.toThrow(UnsupportedFormatError);
-  await expect(detect(text("name,email\nAda,ada@example.com\n"))).rejects.toThrow(/CSV header matches no known bill format/);
+  await expect(detect(text("name,email\nAda,ada@example.com\n"))).rejects.toThrow(/matches no known bill CSV header/);
   await expect(detect(text("%PDF-1.4 garbage"))).rejects.toThrow(UnsupportedFormatError);
 });
