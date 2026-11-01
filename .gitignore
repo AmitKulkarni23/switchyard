@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+# Never commit real bills
+bills/
+uploads/
+*.pdf
+*.csv
+!tests/fixtures/**/*.csv
+!tests/fixtures/**/*.pdf
