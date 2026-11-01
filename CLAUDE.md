@@ -39,7 +39,8 @@ switchyard/
 │   ├── detect.ts             # identify format from content (magic bytes, provider text, CSV headers)
 │   ├── adapters/             # one per input format → FocusRow[]
 │   ├── normalize.ts          # FocusRow[] → Workload (catalog lookup + mapping table)
-│   ├── pricers/              # railway.ts: price(workload, assumptions); index.ts: registry
+│   ├── pricers/              # railway.ts, aws.ts; index.ts: registry
+│   ├── design/               # idea path: parts, starter designs, rules.md prompt, panel (cheap pair + tie-breaker), consensus
 │   ├── compare.ts            # current vs destination, ranges, disappears / no-equivalent lists
 │   ├── llm/fallback.ts       # OpenRouter hook, disabled, unimplemented
 │   ├── schema/               # Zod: FocusRow, Component, Workload, Assumptions, Estimate
@@ -50,7 +51,9 @@ switchyard/
 │       └── price-books/      # railway.yaml: rates from railway.com/pricing and Railway docs
 ├── frontend/
 │   ├── index.html
-│   └── app.tsx               # React + MUI; imports backend/compare.ts to recompute in the browser
+│   ├── app.tsx               # entry: describe an idea or drop a file
+│   ├── workspace.tsx         # Split Workspace: what you told us | Railway vs AWS, recomputed in the browser
+│   └── results.tsx, theme.ts # shared marks, masthead, MUI theme
 ├── drizzle/                  # generated SQL migrations, applied at startup
 ├── tests/                    # bun test; fixtures/ are synthetic bills only, never real ones
 ├── docs/

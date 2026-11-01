@@ -14,3 +14,9 @@ Work on the first task not struck through whose dependencies are done.
 10. ~~[10 Persistence and share links](10-persistence.md): depends on 09~~
 11. ~~[11 Railway infra: Postgres + bucket](11-infra.md): depends on 10~~
 12. [12 Frontend: upload → results](12-frontend.md): depends on 11, follows docs/system-specs/ui-brief.md
+13. [13 AWS pricer](13-aws-pricer.md): depends on 07
+14. ~~[14 Design parts and starter designs](14-design-parts.md): depends on 13~~
+15. ~~[15 Idea drafting: cheap pair + tie-breaker](15-design-drafting.md): depends on 14~~
+16. [16 Split Workspace UI](16-split-workspace.md): depends on 13, 15, follows docs/system-specs/ui-brief-v2.md
+17. [17 CloudFormation parser](17-cloudformation.md): depends on 14
+18. [18 Railway JSON parsers](18-railway-json.md): depends on 14

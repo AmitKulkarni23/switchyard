@@ -105,30 +105,36 @@ The table is a starting point; each pricer task fills and verifies its column ag
 
 Railway and AWS only for now. AWS is priced "right-sized" for the same workload, so the comparison separates "you were over-provisioned" from "Railway is cheaper".
 
-## LLM configuration: a panel of four models
+## LLM configuration: cheap pair first, tie-breaker on disagreement
 
-Every draft is produced by four models in parallel through OpenRouter (`OPENROUTER_API_KEY`), each with the same rulebook, examples and `DesignDraft` JSON schema (all four support strict JSON-schema output). Temperature 0, token cap per request.
+`POST /api/designs` (`backend/design/panel.ts`), through OpenRouter (`OPENROUTER_API_KEY`):
 
-| Model (OpenRouter id) | $ per 1M in / out (2026-11-01) | ≈ $ per draft* |
+```
+idea ─┬─▶ z-ai/glm-5.3 ───────────┐  in parallel
+      └─▶ deepseek/deepseek-v4-flash ┘
+                 │
+        code: compareDrafts()  ── agree ──▶ merge (2/2)
+                 │ disagree, or one failed
+                 ▼
+        openai/gpt-6.1-sol drafts independently (never sees the other drafts)
+                 │
+        code: mergeDrafts() per-field majority (2 of 3); no majority → unticked suggestion
+```
+
+| Model | $ per 1M in / out (2026-11-01) | ≈ $ per draft |
 |---|---|---|
-| `anthropic/claude-opus-5.5` | 4.00 / 20.00 | 0.046 |
-| `openai/gpt-6.1-sol` | 2.00 / 10.00 | 0.023 |
-| `z-ai/glm-5.3` | 0.08 / 3.60 | 0.006 |
+| `z-ai/glm-5.3` | 0.08 / 3.60 | 0.005 |
 | `deepseek/deepseek-v4-flash` | 0.09 / 0.18 | 0.001 |
+| `openai/gpt-6.1-sol` (only on disagreement) | 2.00 / 10.00 | 0.023 |
 
-\* ~4k prompt tokens (rulebook + examples) and ~1.5k output tokens. A panel draft costs about **$0.08**. Prices change; read them from `https://openrouter.ai/api/v1/models` when changing the panel. The panel is a config list (`DESIGN_MODELS`), not hardcoded.
+About $0.006 per idea when the pair agrees, $0.03 when it escalates. Models are config: `DESIGN_PRIMARY_MODELS`, `DESIGN_TIEBREAK_MODEL`.
 
-### Consensus (deterministic, in code)
-
-The models vote; code merges. No model judges another.
-
-- **Parts:** a part is in the draft when at least 3 of 4 models include it. A part 2 of 4 suggest is shown on the review step as an unchecked suggestion: "2 of 4 models suggested a queue: 'reminders are sent asynchronously'". The simplest design wins ties.
-- **Size tiers and traffic shape:** the most common answer; ties go to the smaller tier.
-- **Numeric assumptions:** the median.
-- **Questions:** merged by topic, ranked by how many models asked, top three.
-- **Agreement is shown:** each part carries "4/4", "3/4" so the user sees where the models disagreed.
-- **Quorum:** at least 2 valid drafts. A model that times out (20 s) or fails validation twice is dropped and the page says "3 of 4 models answered". Fewer than 2 → a clear error and the starter-design picker.
-- **Pinned:** the merged draft and every model's raw draft are stored with the share link, so a link always shows the same numbers and the vote can be audited.
+- **Agreement is checked in code**: same set of part types, same tier on sized parts, same traffic shape, numbers within 2×. Free text (`why`, question wording) is never compared. Questions are topics from a fixed list; code supplies each topic's answer options.
+- Each call: strict JSON schema (`DesignDraft`), temperature 0, 20 s timeout, one retry with the validation error, `provider.require_parameters` so OpenRouter only routes to providers that honour the schema.
+- A failed or timed-out cheap model counts as disagreement. Fewer than 2 valid drafts → 502 with a clear message and the starter picker.
+- **Stateless**: no memory between requests. Postgres stores only a cache (`design_drafts`, keyed by idea + rulebook version + models), so the same idea never costs twice and always gets the same answer, and records whether it escalated.
+- Rate limit: 10 drafts per IP per hour (in memory, per replica).
+- Measure the agreement rate with `bun run tests/design-eval.ts` (12 ideas, ~$0.10). If most ideas escalate, tighten `backend/design/rules.md` before loosening the check.
 
 ### Why not Temporal
 
