@@ -1,4 +1,4 @@
-import { bucket, defineRailway, github, postgres, project, ref, service } from "railway/iac";
+import { bucket, defineRailway, github, postgres, preserve, project, ref, service } from "railway/iac";
 
 export default defineRailway(() => {
   const db = postgres("postgres");
@@ -14,6 +14,8 @@ export default defineRailway(() => {
     variables: {
       NODE_ENV: "production",
       LLM_FALLBACK_ENABLED: "false",
+      // Set as a sealed variable in the dashboard; preserve() keeps applies from removing it. Optional: without it, ideas start from starter designs.
+      OPENROUTER_API_KEY: preserve(),
       DATABASE_URL: db.env.DATABASE_URL,
       BUCKET_NAME: ref(uploads, "BUCKET"),
       BUCKET_ENDPOINT: ref(uploads, "ENDPOINT"),

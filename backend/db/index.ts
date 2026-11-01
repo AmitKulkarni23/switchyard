@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/bun-sql";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
 import type { Store } from "../api";
 import { Workload } from "../schema";
-import { estimates } from "./schema";
+import { designDrafts, estimates } from "./schema";
 
 /** 12 random alphanumerics (~71 bits): unguessable share links that are safe to paste anywhere. */
 const ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -19,6 +19,13 @@ export async function pgStore(url: string): Promise<Store> {
       const id = newId();
       await db.insert(estimates).values({ id, workload });
       return id;
+    },
+    async getDraft(key) {
+      const [row] = await db.select().from(designDrafts).where(eq(designDrafts.cacheKey, key)).limit(1);
+      return row?.result;
+    },
+    async saveDraft(key, result, escalated) {
+      await db.insert(designDrafts).values({ cacheKey: key, result, escalated }).onConflictDoNothing();
     },
     async load(id) {
       const [row] = await db.select().from(estimates).where(eq(estimates.id, id)).limit(1);
