@@ -10,6 +10,7 @@ import { condensed, figures, ink, label, muted, red, rule, wash } from "./theme"
 const usd = (n: number) => (Math.abs(n) < 1 && n !== 0 ? "<$1" : `$${Math.round(Math.abs(n)).toLocaleString("en-US")}`);
 const range = (r: { low: number; high: number }) => (Math.round(r.low) === Math.round(r.high) ? usd(r.low) : `${usd(r.low)} – ${usd(r.high)}`);
 const pct = (n: number) => `${Math.round(n * 100)}%`;
+const pctRange = (lo: number, hi: number) => (Math.round(lo * 100) === Math.round(hi * 100) ? pct(lo) : `${pct(lo)}–${pct(hi)}`);
 const sum = (xs: { cost: number }[]) => xs.reduce((s, x) => s + x.cost, 0);
 
 // ---------- outcome marks: the chart's rating vocabulary ----------
@@ -70,13 +71,13 @@ export function Results({ workload, id, fileName, sample, onReset }: Props) {
         <Box className="no-print" sx={{ ml: { md: "auto" }, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Typography component="label" id="busy-label" sx={{ fontSize: 14, whiteSpace: "nowrap" }}>How busy are your servers?</Typography>
-            <Slider aria-labelledby="busy-label" value={busy} onChange={(_, v) => setBusy(v as number[])} min={0} max={100} step={5} disableSwap
-              getAriaValueText={(v) => `${v}% busy`} valueLabelDisplay="auto" valueLabelFormat={(v) => `${v}%`}
-              sx={{ width: 160, color: "#fff", "& .MuiSlider-thumb": { width: 16, height: 16, borderRadius: 0 }, "& .MuiSlider-rail": { opacity: 0.5 }, "& .MuiSlider-valueLabel": { bgcolor: ink, borderRadius: 0 } }} />
+            <Slider aria-labelledby="busy-label" value={busy} onChange={(_, v) => setBusy(v as number[])} min={0} max={100} step={5}
+              getAriaValueText={(v) => `${v}% busy`}
+              sx={{ width: { xs: 140, md: 200 }, color: "#fff", "& .MuiSlider-thumb": { width: 16, height: 16, borderRadius: 0, "&:hover, &.Mui-focusVisible": { boxShadow: "0 0 0 6px rgba(255,255,255,.25)" } }, "& .MuiSlider-rail": { opacity: 0.5 } }} />
             <Typography sx={{ ...figures, fontWeight: 700, fontSize: 14, minWidth: 64 }}>{busy[0] === busy[1] ? `${busy[0]}%` : `${busy[0]}–${busy[1]}%`}</Typography>
           </Box>
           <Button variant="outlined" onClick={() => print()} sx={{ color: "#fff", borderColor: "#fff", "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,.12)" } }}>Export PDF</Button>
-          <Button variant="contained" onClick={share} disabled={!id} title={id ? undefined : "Share links are off on this deployment"}
+          <Button variant="contained" onClick={share} disabled={!id} title={id ? undefined : "This result wasn't saved, so it has no link. Upload the bill again to get one."}
             sx={{ bgcolor: "#fff", color: red, "&:hover": { bgcolor: "#fff" }, "&.Mui-disabled": { bgcolor: "rgba(255,255,255,.6)", color: red } }}>
             {copied ? "Link copied" : "Share link"}
           </Button>
@@ -163,7 +164,7 @@ export function Results({ workload, id, fileName, sample, onReset }: Props) {
         <Box component="footer" sx={{ mt: 6, pt: 2, borderTop: `1px solid ${ink}`, display: "grid", gap: 1, color: muted, fontSize: 13, maxWidth: "75ch" }}>
           <span>
             Railway rates from {railwayPriceBook.sources.map((s, i) => (<Fragment key={s}>{i > 0 && " and "}<a href={s} target="_blank" rel="noreferrer">{new URL(s).hostname + new URL(s).pathname.replace(/\/$/, "")}</a></Fragment>))}, fetched {railwayPriceBook.fetched}.
-            The bill shows what you provisioned, not what you used, so CPU is priced at {pct(utilization.low)}–{pct(utilization.high)} busy and memory at {pct(MEMORY_FLOOR + (1 - MEMORY_FLOOR) * utilization.low)}–{pct(MEMORY_FLOOR + (1 - MEMORY_FLOOR) * utilization.high)} used.
+            The bill shows what you provisioned, not what you used, so CPU is priced at {pctRange(utilization.low, utilization.high)} busy and memory at {pctRange(MEMORY_FLOOR + (1 - MEMORY_FLOOR) * utilization.low, MEMORY_FLOOR + (1 - MEMORY_FLOOR) * utilization.high)} used.
           </span>
           <span>SwitchYard is independent and not affiliated with Railway or Amazon Web Services.</span>
           <Box className="no-print"><Button variant="text" onClick={onReset} sx={{ p: 0, minWidth: 0, color: ink, textDecoration: "underline", textUnderlineOffset: 3 }}>Price another bill</Button></Box>
@@ -192,7 +193,7 @@ function Verdict({ e, utilization }: { e: Estimate; utilization: { low: number; 
       "&::before": { content: '""', position: "absolute", inset: "0 0 auto 0", height: 4, bgcolor: ink, transformOrigin: "left", animation: "sy-rule .6s cubic-bezier(.16,1,.3,1) both" },
       "@keyframes sy-rule": { from: { transform: "scaleX(0)" }, to: { transform: "scaleX(1)" } } }}>
       <Cell head="AWS today" value={usd(e.current)} note="per month, priced lines only" />
-      <Cell head="On Railway" value={range(e.destinationTotal)} note={`at ${pct(utilization.low)}–${pct(utilization.high)} busy · ${e.plan.name === "None" ? "nothing moves" : `${e.plan.name} plan, $${e.plan.monthlyFee}/mo incl. $${e.plan.includedUsage} usage`}`} />
+      <Cell head="On Railway" value={range(e.destinationTotal)} note={`at ${pctRange(utilization.low, utilization.high)} busy · ${e.plan.name === "None" ? "nothing moves" : `${e.plan.name} plan, $${e.plan.monthlyFee}/mo incl. $${e.plan.includedUsage} usage`}`} />
       <Cell head="Difference" value={diffHead} note={diffNote} accent={d.high < 0 ? red : undefined} />
       <Box sx={{ p: { xs: 2, md: 2.5 }, pt: { xs: 2.5, md: 3 }, bgcolor: wash, borderTop: { xs: `1px solid ${rule}`, lg: 0 } }}>
         <Typography sx={{ ...label }}>The verdict</Typography>
