@@ -109,3 +109,7 @@ test("a model that rejects temperature is retried without it", async () => {
   await openRouterCaller("k", fetchImpl)("openai/gpt-6.1-sol", { idea: "x" });
   expect(bodies.map((b) => "temperature" in b)).toEqual([true, false]);
 });
+
+test("merged parts keep the models' order", () => {
+  expect(mergeDrafts([draft(), draft()]).parts.map((p) => p.type)).toEqual(["web-service", "relational-db", "scheduled-job"]);
+});

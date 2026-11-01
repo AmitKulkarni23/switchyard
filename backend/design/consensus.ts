@@ -6,7 +6,11 @@ const SHAPE_ORDER: TrafficShape[] = ["business-hours", "steady", "spiky", "mostl
 const NUMBERS = ["requestsPerDay", "kbPerRequest", "dataGb", "filesGb"] as const;
 
 /** One part per type per draft (first wins). ponytail: two parts of the same type collapse; count them if designs need it. */
-const byType = (d: DesignDraft) => new Map(d.parts.map((p) => [p.type, p] as const).reverse());
+const byType = (d: DesignDraft) => {
+  const m = new Map<PartType, DesignDraft["parts"][number]>();
+  for (const p of d.parts) if (!m.has(p.type)) m.set(p.type, p);
+  return m;
+};
 
 /** Numbers agree within 2×; small values (< 1) agree with each other. */
 const close = (a: number, b: number) => (a < 1 && b < 1) || (Math.min(a, b) > 0 && Math.max(a, b) / Math.min(a, b) <= 2);
