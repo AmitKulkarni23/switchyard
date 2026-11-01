@@ -1,0 +1,22 @@
+# Railway price book. Rates are copied verbatim from the sources below; pricers never hardcode rates.
+destination: railway
+fetched: 2026-11-01
+sources:
+  - https://railway.com/pricing
+  - https://docs.railway.com/reference/pricing/plans
+rates:
+  vcpu_month: 20          # "$20 / vCPU / month ($0.000463 / vCPU / minute)"
+  memory_gb_month: 10     # "$10 / GB / month ($0.000231 / GB / minute)"
+  egress_gb: 0.05         # "$0.05 / GB" (services)
+  volume_gb_month: 0.15   # "$0.15 / GB / month"
+  object_storage_gb_month: 0.015  # "$0.015 per GB-month, free egress"
+plans:
+  # Ordered cheapest first. Limits are per service, including replicas.
+  - name: Hobby
+    monthly_fee: 5
+    included_usage: 5
+    limits: { vcpu: 48, memory_gb: 48, volume_gb: 5 }
+  - name: Pro
+    monthly_fee: 20
+    included_usage: 20
+    limits: { vcpu: 1000, memory_gb: 1000, volume_gb: 1000 }
