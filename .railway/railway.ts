@@ -23,7 +23,7 @@ export default defineRailway(() => {
     },
   });
 
-  return project("switchyard", {
+  return project("SwitchYard", {
     resources: [db, uploads, web],
   });
 });

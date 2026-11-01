@@ -90,20 +90,49 @@ Size tiers map to resources in code: `small` 1 vCPU / 1 GB, `medium` 2 / 4, `lar
 
 ## Per-provider realization (deterministic, in each pricer)
 
-| Part | AWS | Railway | GCP |
-|---|---|---|---|
-| `web-service` | Lambda + API Gateway **or** ECS Fargate + ALB: price both, show the cheaper and the crossover | service | Cloud Run |
-| `relational-db` | RDS | Postgres | Cloud SQL |
+| Part | AWS | Railway |
+|---|---|---|
+| `web-service` | Lambda + API Gateway **or** ECS Fargate + ALB: price both, show the cheaper and the crossover | service |
+| `relational-db` | RDS | Postgres |
 | `key-value-store` | DynamoDB on-demand | Redis or Postgres | Firestore |
 | `queue` | SQS | worker + Redis, or "no equivalent" | Pub/Sub |
-| `object-storage` | S3 | bucket | Cloud Storage |
-| required overhead | NAT gateway for private subnets, ALB | none | Serverless VPC connector when needed |
+| `object-storage` | S3 | bucket |
+| required overhead | NAT gateway for private subnets, ALB | none |
 
 The table is a starting point; each pricer task fills and verifies its column against published rates.
 
-## LLM configuration
+## Destinations
 
-- OpenRouter via `OPENROUTER_API_KEY`; model set by `DESIGN_MODEL` with a pinned default. Temperature 0, JSON-schema structured output, token cap per request.
+Railway and AWS only for now. AWS is priced "right-sized" for the same workload, so the comparison separates "you were over-provisioned" from "Railway is cheaper".
+
+## LLM configuration: a panel of four models
+
+Every draft is produced by four models in parallel through OpenRouter (`OPENROUTER_API_KEY`), each with the same rulebook, examples and `DesignDraft` JSON schema (all four support strict JSON-schema output). Temperature 0, token cap per request.
+
+| Model (OpenRouter id) | $ per 1M in / out (2026-11-01) | ≈ $ per draft* |
+|---|---|---|
+| `anthropic/claude-opus-5.5` | 4.00 / 20.00 | 0.046 |
+| `openai/gpt-6.1-sol` | 2.00 / 10.00 | 0.023 |
+| `z-ai/glm-5.3` | 0.08 / 3.60 | 0.006 |
+| `deepseek/deepseek-v4-flash` | 0.09 / 0.18 | 0.001 |
+
+\* ~4k prompt tokens (rulebook + examples) and ~1.5k output tokens. A panel draft costs about **$0.08**. Prices change; read them from `https://openrouter.ai/api/v1/models` when changing the panel. The panel is a config list (`DESIGN_MODELS`), not hardcoded.
+
+### Consensus (deterministic, in code)
+
+The models vote; code merges. No model judges another.
+
+- **Parts:** a part is in the draft when at least 3 of 4 models include it. A part 2 of 4 suggest is shown on the review step as an unchecked suggestion: "2 of 4 models suggested a queue: 'reminders are sent asynchronously'". The simplest design wins ties.
+- **Size tiers and traffic shape:** the most common answer; ties go to the smaller tier.
+- **Numeric assumptions:** the median.
+- **Questions:** merged by topic, ranked by how many models asked, top three.
+- **Agreement is shown:** each part carries "4/4", "3/4" so the user sees where the models disagreed.
+- **Quorum:** at least 2 valid drafts. A model that times out (20 s) or fails validation twice is dropped and the page says "3 of 4 models answered". Fewer than 2 → a clear error and the starter-design picker.
+- **Pinned:** the merged draft and every model's raw draft are stored with the share link, so a link always shows the same numbers and the vote can be audited.
+
+### Why not Temporal
+
+The panel is four parallel HTTP calls that finish in seconds, inside one request: `Promise.allSettled` with per-model timeouts and one retry covers it. Temporal would add a server (or Temporal Cloud), a worker process and a second deploy for no durable state worth keeping. Revisit when there is a long-running, multi-step job that must survive restarts, e.g. scheduled re-pricing of saved estimates when price books change, or batch processing of very large cost exports.
 - Only the idea text is sent. Bills and templates never go to an LLM.
 - The saved draft is pinned to its share link, so a link always shows the same numbers.
 - Rate-limited per IP; the endpoint returns 429 with a retry time.
@@ -123,5 +152,4 @@ The text box is replaced by a picker of starter designs (web app + Postgres; API
 
 ## Open questions
 
-- Which destinations ship first beyond Railway (proposed: AWS right-sized, Render, Fly, GCP).
-- Default model and the per-request cost ceiling.
+- Per-request spend ceiling and rate limit (proposed: $0.10 per draft, 10 drafts per IP per hour).
