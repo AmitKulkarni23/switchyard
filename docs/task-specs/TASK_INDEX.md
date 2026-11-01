@@ -9,7 +9,7 @@ Work on the first task not struck through whose dependencies are done.
 5. ~~[05 Normalize](05-normalize.md): depends on 04~~
 6. ~~[06 Railway pricer](06-pricer.md): depends on 02, 05~~
 7. ~~[07 Compare](07-compare.md): depends on 06~~
-8. [08 LLM fallback hook](08-llm-hook.md): depends on 05
+8. ~~[08 LLM fallback hook](08-llm-hook.md): depends on 05~~
 9. [09 Upload API](09-upload-api.md): depends on 07
 10. [10 Persistence and share links](10-persistence.md): depends on 09
 11. [11 Railway infra: Postgres + bucket](11-infra.md): depends on 10
