@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet"><style>
+:root{--red:#C8102E;--ink:#111;--rule:#D9D6CF;--wash:#F4F3F0;--muted:#4A4A4A}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:#fff;color:var(--ink);font:15px/1.4 Archivo,sans-serif}
+.n{font-variant-numeric:tabular-nums}
+.mast{background:var(--red);color:#fff;min-height:60px;display:flex;align-items:center;gap:24px;padding:0 40px}
+.brand{font-weight:800;font-stretch:75%;font-size:24px;text-transform:uppercase}
+.lbl{font-weight:700;font-stretch:75%;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.h2{font-weight:800;font-stretch:75%;font-size:20px;text-transform:uppercase}
+.big{font-weight:800;font-stretch:85%;font-size:34px}
+.mut{color:var(--muted);font-size:13px}
+.btn{background:var(--red);color:#fff;border:0;padding:10px 16px;font:700 15px Archivo}
+.btnw{background:#fff;color:var(--red);border:0;padding:8px 14px;font:700 14px Archivo}
+.btno{background:none;color:#fff;border:1px solid #fff;padding:7px 13px;font:700 14px Archivo}
+.mk{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);vertical-align:-1px;margin-right:6px}
+.f{background:var(--ink)}.r{background:var(--red);border-color:var(--red)}
+.chip{border:1px solid var(--ink);padding:2px 8px;font-size:12px;font-weight:600}
+select{font:14px Archivo;border:1px solid var(--ink);padding:3px 6px;background:#fff}
+</style><style>
+.verd{margin:22px 40px 0;display:grid;grid-template-columns:1fr 1fr 1fr 1.2fr;border-top:4px solid var(--ink);border-bottom:1px solid var(--ink)}
+.verd>div{padding:16px 20px;border-right:1px solid var(--rule)}.verd>div:last-child{border:0;background:var(--wash)}
+.grid{margin:22px 40px 0;display:grid;grid-template-columns:1fr 1.25fr 1fr}
+.hd{padding:8px 12px;border-bottom:2px solid var(--ink)}
+.cell{padding:12px;border-bottom:1px solid var(--rule);min-height:76px}
+.spine{background:var(--wash);border-left:1px solid var(--ink);border-right:1px solid var(--ink)}
+.rt{text-align:right}
+</style></head><body>
+<div class="mast"><span class="brand">SwitchYard</span><span>Idea: booking app for dental clinics · 3 parts · illustrative numbers</span><span style="margin-left:auto"></span><button class="btno">Edit the idea</button><button class="btno">Export PDF</button><button class="btnw">Share link</button></div>
+<div class="verd">
+ <div><div class="lbl">On Railway</div><div class="big n">$20 – $37</div><div class="mut">per month · Hobby plan</div></div>
+ <div><div class="lbl">On AWS</div><div class="big n">$77 – $104</div><div class="mut">per month · right-sized</div></div>
+ <div><div class="lbl">Difference</div><div class="big n">$40 – $84</div><div class="mut">less per month on Railway</div></div>
+ <div><div class="lbl">The verdict</div><p style="margin-top:6px">3 parts, all 4 models agreed. AWS needs a NAT gateway ($33) Railway doesn't. Biggest lever: bookings per day.</p></div>
+</div>
+<div class="grid">
+ <div class="hd lbl rt">Railway</div><div class="hd lbl spine" style="text-align:center">Your design · edit any part</div><div class="hd lbl">AWS</div>
+ <div class="cell rt"><b class="n">$8 – $22</b><div class="mut">service · billed on use</div></div>
+ <div class="cell spine"><span class="mk f"></span><b>Web service</b> <select><option>small</option></select> <span class="chip">4/4</span><div class="mut">"patients book online", "admin dashboard" · 200k req/day · business hours</div></div>
+ <div class="cell"><b class="n">$14</b><div class="mut">Lambda + API Gateway (cheaper than Fargate + ALB at $38)</div></div>
+ <div class="cell rt"><b class="n">$6 – $9</b><div class="mut">Postgres · 2 GB volume</div></div>
+ <div class="cell spine"><span class="mk f"></span><b>Relational database</b> <select><option>small</option></select> <span class="chip">4/4</span><div class="mut">bookings, clinics, patients · 2 GB after a year (assumed)</div></div>
+ <div class="cell"><b class="n">$29</b><div class="mut">RDS PostgreSQL db.t4g.small</div></div>
+ <div class="cell rt"><b class="n">&lt;$1</b><div class="mut">cron service</div></div>
+ <div class="cell spine"><span class="mk f"></span><b>Scheduled job</b> · daily <span class="chip">4/4</span><div class="mut">"text them a reminder the day before"</div></div>
+ <div class="cell"><b class="n">$1</b><div class="mut">EventBridge + Lambda</div></div>
+ <div class="cell rt"><b class="n" style="color:var(--red)">$0</b><div class="mut">not needed</div></div>
+ <div class="cell spine"><span class="mk r"></span><b>Network overhead</b><div class="mut">private subnet egress</div></div>
+ <div class="cell"><b class="n">$33</b><div class="mut">NAT gateway</div></div>
+</div>
+</body></html>
