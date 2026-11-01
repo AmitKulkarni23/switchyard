@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400;62..125,600;62..125,800&family=Archivo+Narrow:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#C8102E;--ink:#111;--paper:#fff;--rule:#D9D6CF;--tint:#F3F1EC}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--paper);color:var(--ink);font:15px/1.4 Archivo,sans-serif}
+.num{font-variant-numeric:tabular-nums}
+.mast{background:var(--red);color:#fff;height:60px;display:flex;align-items:center;gap:28px;padding:0 40px}
+.mast b{font:800 22px Archivo;font-stretch:75%;letter-spacing:.02em;text-transform:uppercase}
+.mast .sp{margin-left:auto;display:flex;align-items:center;gap:12px}
+.mast input{accent-color:#fff;width:200px}
+.mast button{background:#fff;color:var(--red);border:0;padding:8px 14px;font-weight:700}
+.mast button.o{background:none;color:#fff;border:1px solid #fff}
+.verdict{margin:24px 40px 0;display:grid;grid-template-columns:1fr 1fr 1fr 1.3fr;border-top:4px solid var(--ink);border-bottom:1px solid var(--ink)}
+.verdict div{padding:16px 20px;border-right:1px solid var(--rule)}
+.verdict div:last-child{border-right:0;background:var(--tint)}
+.verdict small{font:700 12px "Archivo Narrow";text-transform:uppercase;letter-spacing:.08em;display:block}
+.verdict b{font:800 32px Archivo;font-stretch:85%}
+.verdict p{font-size:14px}
+h2{margin:26px 40px 8px;font:800 18px Archivo;font-stretch:75%;text-transform:uppercase}
+table{margin:0 40px;width:1360px;border-collapse:collapse}
+th{font:700 12px "Archivo Narrow";text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:8px;border-bottom:2px solid var(--ink)}
+td{padding:9px 8px;border-bottom:1px solid var(--rule)}
+.r{text-align:right}
+.no{color:#555;width:36px}
+.mark{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid var(--ink);vertical-align:-3px;margin-right:8px}
+.full{background:var(--ink)}.half{background:linear-gradient(90deg,var(--ink) 50%,#fff 50%)}.none{background:#fff}
+.gone{border-color:var(--red);background:var(--red)}
+.dim td{color:#555}
+</style></head><body>
+<div class="mast"><b>SwitchYard</b><span>aws-invoice-2026-10.pdf · sample bill (synthetic) · 14 components</span>
+  <span class="sp">How busy are your servers? <input type="range"> <span class="num">10–50%</span></span>
+  <button class="o">Export PDF</button><button>Share link</button></div>
+<section class="verdict">
+  <div><small>AWS today</small><b class="num">$4,812</b><p>per month, 41 bill lines</p></div>
+  <div><small>On Railway</small><b class="num">$1,140–2,380</b><p>at 10–50% busy</p></div>
+  <div><small>Difference</small><b class="num">$2,432–3,672</b><p>less per month</p></div>
+  <div><small>The verdict</small><p>9 components move. 3 disappear ($202). 2 have no Railway equivalent and stay on AWS ($222). 2 lines not priced ($146).</p></div>
+</section>
+<h2>Ratings by component</h2>
+<table>
+  <tr><th>#</th><th>Component</th><th>AWS service</th><th>Outcome</th><th class="r">AWS /mo</th><th class="r">Railway /mo</th><th class="r">Must keep</th></tr>
+  <tr><td class="no">01</td><td>api (3 × m5.xlarge)</td><td>EC2 · 12 vCPU / 48 GB</td><td><span class="mark full"></span>Moves</td><td class="r num">$1,682</td><td class="r num">$420 – $1,050</td><td class="r">☐</td></tr>
+  <tr><td class="no">02</td><td>orders-db</td><td>RDS Postgres · db.r6g.large</td><td><span class="mark full"></span>Moves</td><td class="r num">$1,104</td><td class="r num">$310 – $620</td><td class="r">☐</td></tr>
+  <tr><td class="no">03</td><td>cache</td><td>ElastiCache Redis</td><td><span class="mark full"></span>Moves</td><td class="r num">$318</td><td class="r num">$70 – $140</td><td class="r">☐</td></tr>
+  <tr><td class="no">07</td><td>NAT Gateway</td><td>VPC · 2 AZ</td><td><span class="mark gone"></span>Disappears</td><td class="r num">$98</td><td class="r num">$0</td><td class="r">—</td></tr>
+  <tr><td class="no">11</td><td>events</td><td>SQS</td><td><span class="mark none"></span>No equivalent</td><td class="r num">$12</td><td class="r num">$12 on AWS</td><td class="r">☑</td></tr>
+  <tr><td class="no">12</td><td>sessions</td><td>DynamoDB</td><td><span class="mark none"></span>No equivalent</td><td class="r num">$210</td><td class="r num">$210 on AWS</td><td class="r">☑</td></tr>
+  <tr class="dim"><td class="no">—</td><td>2 lines not priced</td><td>Support, Marketplace</td><td><span class="mark half"></span>Not priced</td><td class="r num">$146</td><td class="r num">—</td><td class="r">—</td></tr>
+</table>
+</body></html>

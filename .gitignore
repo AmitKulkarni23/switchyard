@@ -12,3 +12,8 @@ uploads/
 *.csv
 !tests/fixtures/**/*.csv
 !tests/fixtures/**/*.pdf
+
+# Impeccable local state
+.impeccable/hook.cache.json
+.impeccable/questions/
+.impeccable/config.local.json

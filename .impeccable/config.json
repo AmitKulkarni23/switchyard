@@ -1,0 +1,71 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/assigned.html"
+        ],
+        "createdAt": "2026-11-01T19:48:30.618Z",
+        "reason": "model: spent decision-round sketch of a direction the user did not choose; kept as the round record, never built"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/assigned.html"
+        ],
+        "createdAt": "2026-11-01T19:48:30.634Z",
+        "reason": "model: spent decision-round sketch of a direction the user did not choose; kept as the round record, never built"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/challenger-rail.html"
+        ],
+        "createdAt": "2026-11-01T19:48:30.647Z",
+        "reason": "model: spent decision-round sketch of a direction the user did not choose; kept as the round record, never built (catalog world's own bone ground)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-01T19:48:30.659Z",
+        "reason": "model: canon card deliberately depicts the category standard (MUI/Roboto); user chose another direction"
+      },
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon.html"
+        ],
+        "createdAt": "2026-11-01T19:48:30.670Z",
+        "reason": "model: canon card deliberately depicts the category standard; user chose another direction"
+      },
+      {
+        "rule": "overused-font",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon-r1.html"
+        ],
+        "createdAt": "2026-11-01T19:48:35.731Z",
+        "reason": "model: canon card deliberately depicts the category standard; user chose another direction"
+      },
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/canon-r1.html"
+        ],
+        "createdAt": "2026-11-01T19:48:35.749Z",
+        "reason": "model: canon card deliberately depicts the category standard; user chose another direction"
+      }
+    ]
+  }
+}

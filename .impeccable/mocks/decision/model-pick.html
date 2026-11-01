@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FBFAF6;--ink:#14171A;--blue:#1F4E8C;--gold:#C9A227;--rule:#D4D2CA}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--paper);color:var(--ink);font:15px/1.45 "Public Sans",sans-serif}
+.num{font-family:"Martian Mono",monospace;font-variant-numeric:tabular-nums}
+header{height:60px;background:var(--blue);color:#fff;display:flex;align-items:center;gap:28px;padding:0 40px}
+header b{font-weight:800;letter-spacing:.04em}
+header .sp{margin-left:auto}
+header button{background:none;border:1px solid #fff;color:#fff;padding:7px 14px;font-weight:600}
+.wrap{display:grid;grid-template-columns:900px 1fr;gap:48px;padding:28px 40px}
+h1{font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:var(--blue);margin-bottom:10px}
+.line{display:grid;grid-template-columns:56px 1fr 220px;border-bottom:1px solid var(--rule);padding:10px 0;align-items:baseline}
+.n{font:600 13px "Martian Mono",monospace;color:var(--blue)}
+.d small{display:block;color:#5d6166;font-size:13px}
+.box{border:1px solid var(--ink);padding:6px 10px;text-align:right;background:#fff}
+.total .box{background:var(--ink);color:#fff;font-weight:600}
+.total{border-bottom:2px solid var(--ink)}
+aside .card{border-top:3px solid var(--gold);padding-top:12px;margin-bottom:26px}
+aside h2{font-size:13px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
+aside li{margin:6px 0 6px 18px}
+.range{height:6px;background:var(--rule);position:relative;margin:14px 0 6px}
+.range i{position:absolute;left:10%;width:40%;height:6px;background:var(--blue)}
+</style></head><body>
+<header><b>SwitchYard</b><span>aws-invoice-2026-10.pdf · sample bill (synthetic)</span><span class="sp">Busy 10–50%</span><button>Share link</button><button>Export PDF</button></header>
+<div class="wrap">
+<section>
+  <h1>Worksheet · Railway estimate</h1>
+  <div class="line"><span class="n">1</span><span class="d">AWS total this period<small>From 41 bill lines</small></span><span class="box num">$4,812</span></div>
+  <div class="line"><span class="n">2</span><span class="d">Compute to move<small>12 vCPU × $20 × 10–50% busy, plus 48 GB × $10 × 30–70%</small></span><span class="box num">$420 – $1,050</span></div>
+  <div class="line"><span class="n">3</span><span class="d">Databases to move<small>Postgres, Redis: line 2 rates, plus 220 GB volume × $0.15</small></span><span class="box num">$380 – $760</span></div>
+  <div class="line"><span class="n">4</span><span class="d">Storage and egress<small>1.4 TB egress × $0.05; 600 GB bucket</small></span><span class="box num">$118 – $148</span></div>
+  <div class="line"><span class="n">5</span><span class="d">Kept on AWS (no equivalent)<small>SQS, DynamoDB, unchanged from bill</small></span><span class="box num">$222</span></div>
+  <div class="line total"><span class="n">6</span><span class="d"><b>Railway estimate</b><small>Add lines 2 through 5</small></span><span class="box num">$1,140 – $2,380</span></div>
+  <div class="line"><span class="n">7</span><span class="d">Disappears<small>NAT gateway, load balancer hours, inter-AZ transfer</small></span><span class="box num">$202</span></div>
+  <div class="line total"><span class="n">8</span><span class="d"><b>Difference</b><small>Line 1 minus line 6</small></span><span class="box num">$2,432 – $3,672</span></div>
+</section>
+<aside>
+  <div class="card"><h2>How busy are your servers?</h2><div class="range"><i></i></div><span class="num">10% – 50%</span></div>
+  <div class="card"><h2>No equivalent on Railway</h2><ul><li>SQS · events queue · $12</li><li>DynamoDB · sessions · $210</li></ul></div>
+  <div class="card"><h2>Not priced</h2><ul><li>AWS Support (Business) · $100</li><li>Marketplace subscription · $46</li></ul></div>
+</aside>
+</div>
+</body></html>

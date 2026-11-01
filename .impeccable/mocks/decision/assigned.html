@@ -1,0 +1,67 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F2F1EC;--ink:#1C1F22;--through:#2F6B4F;--stop:#B8432E;--siding:#8A8F94;--rule:#C9C8C1}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--paper);color:var(--ink);font:15px/1.4 Overpass,sans-serif}
+.num{font-family:"Overpass Mono",monospace;font-variant-numeric:tabular-nums}
+header{height:64px;display:flex;align-items:center;gap:32px;padding:0 40px;border-bottom:1px solid var(--ink)}
+.brand{font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.file{color:#5a5f63}
+.slider{margin-left:auto;display:flex;align-items:center;gap:14px}
+.track{width:260px;height:2px;background:var(--ink);position:relative}
+.band{position:absolute;left:10%;width:40%;top:-3px;height:8px;background:var(--through)}
+.btn{border:1px solid var(--ink);padding:8px 14px;font-weight:600;background:none}
+.plate{margin:28px 40px 0;background:var(--ink);color:var(--paper);display:grid;grid-template-columns:1fr 1fr 1fr;padding:22px 28px}
+.plate small{display:block;text-transform:uppercase;letter-spacing:.12em;font-size:12px;opacity:.7}
+.plate b{font:600 34px "Overpass Mono",monospace}
+.yard{margin:24px 40px 0;height:250px;position:relative;border-bottom:1px solid var(--rule)}
+.yard svg{position:absolute;inset:0}
+.lbl{position:absolute;font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+table{margin:20px 40px 0;width:1360px;border-collapse:collapse}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--ink);padding:6px 8px}
+td{padding:7px 8px;border-bottom:1px solid var(--rule)}
+td.r,th.r{text-align:right}
+.dot{display:inline-block;width:10px;height:10px;margin-right:8px;vertical-align:middle}
+.g{background:var(--through)}.s{background:var(--stop)}.k{background:var(--siding)}
+.tag{font-size:12px;opacity:.6}
+</style></head><body>
+<header>
+  <span class="brand">SwitchYard</span>
+  <span class="file">aws-invoice-2026-10.pdf · sample bill (synthetic) · 41 lines → 14 components</span>
+  <div class="slider"><span>How busy are your servers?</span><div class="track"><div class="band"></div></div><span class="num">10–50%</span></div>
+  <button class="btn">Share link</button><button class="btn">Export PDF</button>
+</header>
+<section class="plate">
+  <div><small>AWS today</small><b>$4,812/mo</b></div>
+  <div><small>On Railway, 10–50% busy</small><b>$1,140 – $2,380</b></div>
+  <div><small>Difference</small><b>$2,432 – $3,672 less</b></div>
+</section>
+<div class="yard">
+  <svg width="1360" height="250" viewBox="0 0 1360 250" fill="none" stroke-width="3">
+    <path d="M0 125 H300" stroke="#1C1F22"/>
+    <path d="M300 125 C380 125 400 40 480 40 H1360" stroke="#2F6B4F"/>
+    <path d="M300 125 C380 125 400 80 480 80 H1360" stroke="#2F6B4F"/>
+    <path d="M300 125 H1360" stroke="#2F6B4F"/>
+    <path d="M300 125 C380 125 400 170 480 170 H760" stroke="#B8432E"/>
+    <path d="M760 158 V182" stroke="#B8432E" stroke-width="6"/>
+    <path d="M300 125 C380 125 400 215 480 215 H620" stroke="#8A8F94" stroke-dasharray="8 6"/>
+    <circle cx="300" cy="125" r="7" fill="#F2F1EC" stroke="#1C1F22"/>
+  </svg>
+  <span class="lbl" style="left:0;top:96px">AWS bill · 14 components</span>
+  <span class="lbl" style="left:500px;top:14px;color:var(--through)">Compute · 5 services</span>
+  <span class="lbl" style="left:500px;top:54px;color:var(--through)">Postgres · Redis</span>
+  <span class="lbl" style="left:500px;top:99px;color:var(--through)">Storage · egress</span>
+  <span class="lbl" style="left:780px;top:160px;color:var(--stop)">Disappears · NAT, ALB, inter-AZ · $202/mo</span>
+  <span class="lbl" style="left:640px;top:205px;color:#5a5f63">No equivalent · SQS, DynamoDB · stays on AWS $222/mo</span>
+</div>
+<table>
+  <tr><th>Component</th><th>From</th><th>Outcome</th><th class="r">AWS /mo</th><th class="r">Railway /mo</th><th class="r">Must keep</th></tr>
+  <tr><td><span class="dot g"></span>api (3 × m5.xlarge)</td><td>EC2 · 12 vCPU / 48 GB</td><td>Railway service</td><td class="r num">$1,682</td><td class="r num">$420 – $1,050</td><td class="r">○</td></tr>
+  <tr><td><span class="dot g"></span>orders-db</td><td>RDS Postgres · db.r6g.large</td><td>Railway Postgres</td><td class="r num">$1,104</td><td class="r num">$310 – $620</td><td class="r">○</td></tr>
+  <tr><td><span class="dot s"></span>NAT Gateway</td><td>VPC · 2 AZ</td><td>Disappears</td><td class="r num">$98</td><td class="r num">$0</td><td class="r tag">—</td></tr>
+  <tr><td><span class="dot k"></span>events queue</td><td>SQS</td><td>No equivalent</td><td class="r num">$12</td><td class="r num tag">stays on AWS</td><td class="r">●</td></tr>
+  <tr><td><span class="dot k"></span>2 lines not priced</td><td>Support, Marketplace</td><td>Not priced</td><td class="r num">$146</td><td class="r num tag">—</td><td class="r tag">—</td></tr>
+</table>
+</body></html>

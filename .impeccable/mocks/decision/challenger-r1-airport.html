@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--y:#FFD100;--ink:#111;--g:#3A3A3A}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:#F4F4F2;color:var(--ink);font:16px/1.4 "Hanken Grotesk",sans-serif}
+.num{font-variant-numeric:tabular-nums}
+header{height:56px;background:var(--ink);color:#fff;display:flex;align-items:center;gap:24px;padding:0 40px}
+header b{font-weight:800}
+header .sp{margin-left:auto}
+header button{background:none;border:1px solid #fff;color:#fff;padding:6px 12px;font-weight:600}
+.band{background:var(--y);margin:24px 40px 0;padding:22px 30px;display:flex;align-items:baseline;gap:40px}
+.band b{font-size:44px;font-weight:800}
+.band span{font-size:18px}
+.routes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 40px 0}
+.route{background:var(--ink);color:#fff;padding:18px 22px}
+.route h3{display:flex;align-items:center;gap:14px;font-size:22px}
+.pic{width:36px;height:36px;background:#fff;color:var(--ink);display:grid;place-items:center;font-weight:800}
+.route p{margin-top:8px;color:#e6e6e6}
+.route .amt{font-size:28px;font-weight:800;margin-top:10px;color:var(--y)}
+table{margin:20px 40px 0;width:1360px;border-collapse:collapse;background:#fff}
+th{text-align:left;font-size:13px;padding:8px 10px;border-bottom:2px solid var(--ink)}
+td{padding:8px 10px;border-bottom:1px solid #ddd}
+.r{text-align:right}
+</style></head><body>
+<header><b>SwitchYard</b><span>aws-invoice-2026-10.pdf · sample bill (synthetic)</span><span class="sp">How busy are your servers? 10–50%</span><button>Export PDF</button><button>Share link</button></header>
+<div class="band"><span>AWS today</span><b class="num">$4,812</b><span>→ Railway</span><b class="num">$1,140 – $2,380</b><span>per month</span></div>
+<div class="routes">
+  <div class="route"><h3><span class="pic">→</span>To Railway</h3><p>9 components: api, orders-db, cache, storage, egress…</p><div class="amt num">$1,682 → $420–1,050</div></div>
+  <div class="route"><h3><span class="pic">×</span>Disappears</h3><p>NAT gateway, load balancer, inter-AZ transfer</p><div class="amt num">$202 saved</div></div>
+  <div class="route"><h3><span class="pic">↺</span>Stays on AWS</h3><p>SQS, DynamoDB: no Railway equivalent</p><div class="amt num">$222 kept</div></div>
+</div>
+<table>
+  <tr><th>Component</th><th>Route</th><th class="r">AWS /mo</th><th class="r">Railway /mo</th></tr>
+  <tr><td>api (3 × m5.xlarge)</td><td>To Railway</td><td class="r num">$1,682</td><td class="r num">$420 – $1,050</td></tr>
+  <tr><td>orders-db · RDS Postgres</td><td>To Railway</td><td class="r num">$1,104</td><td class="r num">$310 – $620</td></tr>
+  <tr><td>NAT Gateway</td><td>Disappears</td><td class="r num">$98</td><td class="r num">$0</td></tr>
+  <tr><td>events · SQS</td><td>Stays on AWS</td><td class="r num">$12</td><td class="r num">$12</td></tr>
+</table>
+</body></html>

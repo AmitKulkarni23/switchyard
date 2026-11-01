@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Text:wght@400;500;700&family=Red+Hat+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0E1116;--blue:#0057B8;--rule:#D7DCE2;--tint:#F2F5F8}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:#fff;color:var(--navy);font:15px/1.4 "Red Hat Text",sans-serif}
+.num{font-family:"Red Hat Mono",monospace;font-variant-numeric:tabular-nums}
+header{height:56px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:28px;padding:0 40px}
+header b{font-weight:700;letter-spacing:.04em}
+header .sp{margin-left:auto}
+header button{background:none;border:1px solid #fff;color:#fff;padding:6px 12px}
+.title{padding:22px 40px 0;display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid var(--blue);margin:0 40px;padding-left:0;padding-bottom:10px}
+.title h1{font-size:22px}
+.title span{color:#4b5563}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);margin:20px 40px 6px}
+table{margin:0 40px;width:1360px;border-collapse:collapse}
+th{background:var(--tint);text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:8px;border:1px solid var(--rule)}
+td{padding:8px;border:1px solid var(--rule)}
+.r{text-align:right}
+.abs td:first-child{font-weight:700}
+sup{color:var(--blue);font-weight:700}
+.notes{margin:14px 40px;font-size:13px;color:#374151;columns:2;column-gap:40px}
+</style></head><body>
+<header><b>SwitchYard</b><span>aws-invoice-2026-10.pdf · sample bill (synthetic)</span><span class="sp">Utilization 10% · 30% · 50%</span><button>Export PDF</button><button>Share link</button></header>
+<div class="title"><h1>Workload re-priced on Railway</h1><span>14 components from 41 bill lines · rates fetched 2026-10-28</span></div>
+<h2>Totals</h2>
+<table class="abs">
+  <tr><th>Parameter</th><th class="r">Min</th><th class="r">Typ</th><th class="r">Max</th><th>Conditions</th></tr>
+  <tr><td>AWS cost today</td><td class="r num">—</td><td class="r num">$4,812</td><td class="r num">—</td><td>As billed, October 2026</td></tr>
+  <tr><td>Railway cost<sup>1</sup></td><td class="r num">$1,140</td><td class="r num">$1,760</td><td class="r num">$2,380</td><td>Utilization 10 / 30 / 50%</td></tr>
+  <tr><td>Difference</td><td class="r num">$2,432</td><td class="r num">$3,052</td><td class="r num">$3,672</td><td>Per month</td></tr>
+</table>
+<h2>Characteristics by component</h2>
+<table>
+  <tr><th>Component</th><th>Source</th><th class="r">AWS</th><th class="r">Min</th><th class="r">Typ</th><th class="r">Max</th><th>Conditions</th></tr>
+  <tr><td>api</td><td>EC2 3 × m5.xlarge</td><td class="r num">$1,682</td><td class="r num">$420</td><td class="r num">$735</td><td class="r num">$1,050</td><td>12 vCPU, 48 GB</td></tr>
+  <tr><td>orders-db</td><td>RDS Postgres</td><td class="r num">$1,104</td><td class="r num">$310</td><td class="r num">$465</td><td class="r num">$620</td><td>220 GB volume</td></tr>
+  <tr><td>NAT Gateway<sup>2</sup></td><td>VPC</td><td class="r num">$98</td><td class="r num">$0</td><td class="r num">$0</td><td class="r num">$0</td><td>Disappears</td></tr>
+  <tr><td>events<sup>3</sup></td><td>SQS</td><td class="r num">$12</td><td class="r num">$12</td><td class="r num">$12</td><td class="r num">$12</td><td>No equivalent, stays on AWS</td></tr>
+</table>
+<div class="notes">
+  <p>1. Railway bills actual CPU, memory, egress and volume usage. The bill shows provisioned capacity, so utilization is assumed.</p>
+  <p>2. NAT gateway, load balancer hours and inter-AZ transfer have no Railway charge: $202/mo.</p>
+  <p>3. SQS and DynamoDB have no managed Railway equivalent: $222/mo kept on AWS.</p>
+  <p>4. Two lines ($146) were not priced: AWS Support and one Marketplace subscription.</p>
+</div>
+</body></html>

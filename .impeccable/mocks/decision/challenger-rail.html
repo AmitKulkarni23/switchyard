@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bone:#EFE9DD;--ink:#1A1A18;--red:#C2361F;--rule:#1A1A18}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--bone);color:var(--ink);font:16px/1.5 "Source Serif 4",serif}
+.ui{font-family:"Source Sans 3",sans-serif}
+.num{font-variant-numeric:tabular-nums lining-nums}
+header{display:flex;gap:28px;align-items:center;padding:20px 60px;border-bottom:1px solid var(--rule)}
+header b{font-size:20px;font-variant:small-caps;letter-spacing:.08em}
+header .sp{margin-left:auto}
+header button{background:none;border:1px solid var(--ink);padding:6px 12px;font:600 14px "Source Sans 3"}
+.page{display:grid;grid-template-columns:240px 1fr 260px;gap:40px;padding:26px 60px}
+.margin{font-size:13px;color:#4a4842}
+.margin h3{font-variant:small-caps;letter-spacing:.08em;font-size:14px;color:var(--ink);margin:0 0 6px}
+.margin p{margin-bottom:18px}
+.totals{display:grid;grid-template-columns:1fr 90px 1fr;border-bottom:1px solid var(--rule);padding-bottom:14px;margin-bottom:8px}
+.totals div:first-child{text-align:right}
+.totals small{display:block;font-variant:small-caps;letter-spacing:.08em}
+.totals b{font-size:30px;font-weight:600}
+.row{display:grid;grid-template-columns:1fr 90px 1fr;align-items:baseline;border-bottom:1px solid #cfc7b6;padding:7px 0}
+.row .l{text-align:right;padding-right:14px}
+.row .r{padding-left:14px}
+.key{text-align:center;border-left:1px solid var(--red);border-right:1px solid var(--red);font:600 12px "Source Sans 3";color:var(--red);letter-spacing:.1em}
+.det{display:inline-block;width:10px;height:10px;border:1px solid var(--red);margin-left:6px;vertical-align:middle}
+.det.on{background:var(--red)}
+.struck{text-decoration:line-through;color:#5f5a50}
+</style></head><body>
+<header><b>SwitchYard</b><span class="ui">aws-invoice-2026-10.pdf · sample bill (synthetic)</span><span class="sp ui">How busy are your servers? 10–50%</span><button>Share link</button><button>Export PDF</button></header>
+<div class="page">
+<aside class="margin">
+  <h3>Assumptions</h3><p>Utilization 10–50% for compute, 30–70% for memory. Rates from railway.com/pricing, fetched 2026-10-28.</p>
+  <h3>Disappears</h3><p>NAT gateway, load balancer hours and inter-AZ transfer: $202/mo with no Railway charge.</p>
+</aside>
+<main>
+  <div class="totals num"><div><small>AWS</small><b>$4,812</b></div><div></div><div><small>Railway</small><b>$1,140 – $2,380</b></div></div>
+  <div class="row num"><span class="l">$1,682</span><span class="key">API<span class="det"></span></span><span class="r">$420 – $1,050</span></div>
+  <div class="row num"><span class="l">$1,104</span><span class="key">PG<span class="det"></span></span><span class="r">$310 – $620</span></div>
+  <div class="row num"><span class="l">$318</span><span class="key">REDIS<span class="det"></span></span><span class="r">$70 – $140</span></div>
+  <div class="row num"><span class="l">$540</span><span class="key">S3<span class="det"></span></span><span class="r">$90 – $90</span></div>
+  <div class="row num"><span class="l">$98</span><span class="key">NAT</span><span class="r struck">disappears</span></div>
+  <div class="row num"><span class="l">$41</span><span class="key">ALB</span><span class="r struck">disappears</span></div>
+  <div class="row num"><span class="l">$12</span><span class="key">SQS<span class="det on"></span></span><span class="r">kept on AWS · $12</span></div>
+  <div class="row num"><span class="l">$210</span><span class="key">DDB<span class="det on"></span></span><span class="r">kept on AWS · $210</span></div>
+</main>
+<aside class="margin">
+  <h3>No equivalent</h3><p>SQS and DynamoDB have no managed Railway counterpart. They stay on AWS at their current cost.</p>
+  <h3>Not priced</h3><p>AWS Support and one Marketplace line, $146, are shown but not re-priced.</p>
+</aside>
+</div>
+</body></html>
