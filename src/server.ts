@@ -1,5 +1,6 @@
 import { S3Client } from "bun";
 import { createEstimate, type Deps, getEstimate, MAX_UPLOAD_BYTES } from "./api";
+import { pgStore } from "./db";
 import index from "./frontend/index.html";
 
 function bucketFromEnv(env = process.env): Deps["bucket"] {
@@ -14,7 +15,15 @@ function bucketFromEnv(env = process.env): Deps["bucket"] {
   return { write: (key, data) => s3.write(key, data), delete: (key) => s3.delete(key) };
 }
 
-const deps: Deps = { bucket: bucketFromEnv() };
+async function storeFromEnv(url = process.env.DATABASE_URL): Promise<Deps["store"]> {
+  if (!url) {
+    console.log("DATABASE_URL not set: share links are disabled.");
+    return undefined;
+  }
+  return pgStore(url);
+}
+
+const deps: Deps = { bucket: bucketFromEnv(), store: await storeFromEnv() };
 
 const server = Bun.serve({
   port: Number(process.env.PORT ?? 3000),
