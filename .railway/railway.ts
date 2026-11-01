@@ -5,7 +5,7 @@ export default defineRailway(() => {
   // Private bucket for uploads; each object is deleted right after parsing.
   const uploads = bucket("uploads", { region: "sjc" });
 
-  const web = service("web", {
+  const app = service("switchyard", {
     source: github("AmitKulkarni23/switchyard"),
     // Only code changes redeploy; docs and specs pushes don't.
     build: { watchPatterns: ["backend/**", "frontend/**", "package.json", "bun.lock", "tsconfig.json", "drizzle/**"] },
@@ -26,6 +26,6 @@ export default defineRailway(() => {
   });
 
   return project("SwitchYard", {
-    resources: [db, uploads, web],
+    resources: [db, uploads, app],
   });
 });

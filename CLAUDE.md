@@ -31,7 +31,7 @@ Upload (PDF or CSV) → detect the format from file content → convert to FOCUS
 ```
 switchyard/
 ├── .railway/
-│   └── railway.ts            # Railway IaC: web, postgres, uploads bucket
+│   └── railway.ts            # Railway IaC: switchyard (app), postgres, uploads bucket
 ├── backend/
 │   ├── server.ts             # Bun.serve: /, /health, /api/estimates
 │   ├── api.ts                # upload + share-link handlers

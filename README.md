@@ -34,6 +34,8 @@ Fixtures in `tests/fixtures/` are synthetic; regenerate with `bun run tests/fixt
 
 ## Deploy
 
+Live: https://switchyard.up.railway.app
+
 One-click Railway template: coming soon.
 
 Overview, alternatives considered and known problems: coming soon.

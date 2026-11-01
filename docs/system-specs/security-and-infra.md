@@ -13,9 +13,10 @@
 ## Railway
 
 - **IaC**: all configuration in `.railway/railway.ts`. `railway config plan` before every `railway config apply`. No dashboard-only changes.
-- **Resources**: `web` (Bun server: API + frontend), `postgres` (share links: derived workloads only), `uploads` (private bucket, region sjc; every object deleted right after parsing).
-- **Wiring**: `web` gets `DATABASE_URL` from `postgres` and `BUCKET_NAME`, `BUCKET_ENDPOINT`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` from `uploads` by reference. `BUCKET_REGION` is the literal `auto` (S3 signing region). Bun's S3 client must use path-style URLs against Railway's endpoint; virtual-hosted style gets AccessDenied.
-- **Deploys**: pushes to `main` deploy `web`; watch patterns limit this to `backend/**`, `frontend/**`, `package.json`, `bun.lock`, `tsconfig.json`, `drizzle/**`.
+- **Resources**: `switchyard` (Bun server: API + frontend), `postgres` (share links: derived workloads only), `uploads` (private bucket, region sjc; every object deleted right after parsing).
+- **Wiring**: `switchyard` gets `DATABASE_URL` from `postgres` and `BUCKET_NAME`, `BUCKET_ENDPOINT`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` from `uploads` by reference. `BUCKET_REGION` is the literal `auto` (S3 signing region). Bun's S3 client must use path-style URLs against Railway's endpoint; virtual-hosted style gets AccessDenied.
+- **Public URL**: https://switchyard.up.railway.app (Railway-provided domain, renamed from the generated `web-production-666f2`).
+- **Deploys**: pushes to `main` deploy `switchyard`; watch patterns limit this to `backend/**`, `frontend/**`, `package.json`, `bun.lock`, `tsconfig.json`, `drizzle/**`.
 - **Migrations**: Drizzle migrations in `drizzle/` run at startup.
 - **Start command**: `bun run backend/server.ts` so SIGTERM reaches the app.
 - **Healthcheck**: `/health`.
