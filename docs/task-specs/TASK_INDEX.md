@@ -2,7 +2,7 @@
 
 Work on the first task not struck through whose dependencies are done.
 
-1. [01 Schemas](01-schemas.md)
+1. ~~[01 Schemas](01-schemas.md)~~
 2. [02 Railway price book](02-price-book.md): depends on 01
 3. [03 Detect](03-detect.md): depends on 01
 4. [04 Adapters](04-adapters.md): depends on 03
