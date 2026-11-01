@@ -1,0 +1,82 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Length 3686 >>
+stream
+BT /F2 8 Tf 50 770 Td (Amazon Web Services, Inc.) Tj ET
+BT /F1 8 Tf 50 759 Td (Bill for September 2026) Tj ET
+BT /F1 8 Tf 50 748 Td (Billing period September 1 - September 30, 2026) Tj ET
+BT /F1 8 Tf 50 737 Td (SAMPLE BILL - SYNTHETIC DATA) Tj ET
+BT /F2 8 Tf 50 726 Td (Amazon Elastic Compute Cloud    $555.97) Tj ET
+BT /F1 8 Tf 65 715 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 704 Td ($0.192 per On Demand Linux m5.xlarge Instance Hour    2,160.000 Hrs    $414.72) Tj ET
+BT /F1 8 Tf 80 693 Td ($0.0416 per On Demand Linux t3.medium Instance Hour    720.000 Hrs    $29.95) Tj ET
+BT /F1 8 Tf 80 682 Td ($0.08 per GB-month of General Purpose \(gp3\) provisioned storage    300.000 GB-Mo    $24.00) Tj ET
+BT /F1 8 Tf 80 671 Td ($0.045 per NAT Gateway Hour    1,440.000 Hrs    $64.80) Tj ET
+BT /F1 8 Tf 80 660 Td ($0.045 per GB Data Processed by NAT Gateways    500.000 GB    $22.50) Tj ET
+BT /F2 8 Tf 50 649 Td (Elastic Load Balancing    $21.96) Tj ET
+BT /F1 8 Tf 65 638 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 627 Td ($0.0225 per Application LoadBalancer-hour \(or partial hour\)    720.000 Hrs    $16.20) Tj ET
+BT /F1 8 Tf 80 616 Td ($0.008 per used Application load balancer capacity unit-hour    720.000 LCU-Hrs    $5.76) Tj ET
+BT /F2 8 Tf 50 605 Td (AWS Data Transfer    $116.00) Tj ET
+BT /F1 8 Tf 65 594 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 583 Td ($0.09 per GB - first 10 TB / month data transfer out beyond the global free tier    1,200.000 GB    $108.00) Tj ET
+BT /F1 8 Tf 80 572 Td ($0.01 per GB - regional data transfer between EC2 AZs    800.000 GB    $8.00) Tj ET
+BT /F2 8 Tf 50 561 Td (Amazon Relational Database Service    $185.00) Tj ET
+BT /F1 8 Tf 65 550 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 539 Td ($0.225 per RDS db.r6g.large Single-AZ instance hour running PostgreSQL    720.000 Hrs    $162.00) Tj ET
+BT /F1 8 Tf 80 528 Td ($0.115 per GB-month of provisioned gp3 storage running PostgreSQL    200.000 GB-Mo    $23.00) Tj ET
+BT /F2 8 Tf 50 517 Td (Amazon ElastiCache    $46.80) Tj ET
+BT /F1 8 Tf 65 506 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 495 Td ($0.065 per cache.t4g.medium Node Hour running Redis    720.000 Hrs    $46.80) Tj ET
+BT /F2 8 Tf 50 484 Td (Amazon Simple Storage Service    $18.80) Tj ET
+BT /F1 8 Tf 65 473 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 462 Td ($0.023 per GB - first 50 TB / month of storage used    600.000 GB-Mo    $13.80) Tj ET
+BT /F1 8 Tf 80 451 Td ($0.005 per 1,000 PUT, COPY, POST, or LIST requests    1,000,000.000 Requests    $5.00) Tj ET
+BT /F2 8 Tf 50 440 Td (Amazon Simple Queue Service    $11.60) Tj ET
+BT /F1 8 Tf 65 429 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 418 Td ($0.40 per 1,000,000 Amazon SQS Requests per month thereafter    29,000,000.000 Requests    $11.60) Tj ET
+BT /F2 8 Tf 50 407 Td (Amazon DynamoDB    $62.50) Tj ET
+BT /F1 8 Tf 65 396 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 385 Td ($1.25 per million write request units    50,000,000.000 WriteRequestUnits    $62.50) Tj ET
+BT /F2 8 Tf 50 374 Td (AmazonCloudWatch    $50.00) Tj ET
+BT /F1 8 Tf 65 363 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 352 Td ($0.50 per GB - data ingested    100.000 GB    $50.00) Tj ET
+BT /F2 8 Tf 50 341 Td (AWS Support \(Business\)    $100.00) Tj ET
+BT /F1 8 Tf 65 330 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 319 Td (AWS Support \(Business\)    $100.00) Tj ET
+BT /F2 8 Tf 50 308 Td (Amazon Kinesis    $10.80) Tj ET
+BT /F1 8 Tf 65 297 Td (US East \(N. Virginia\)) Tj ET
+BT /F1 8 Tf 80 286 Td ($0.015 per shard hour    720.000 Hrs    $10.80) Tj ET
+BT /F2 8 Tf 50 275 Td (Tax    $82.40) Tj ET
+BT /F2 8 Tf 50 264 Td (Total    $1,261.83) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000321 00000 n 
+0000000396 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+4134
+%%EOF
