@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/server.ts",
+    "dev": "bun --hot backend/server.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },

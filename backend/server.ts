@@ -1,7 +1,7 @@
 import { S3Client } from "bun";
 import { createEstimate, type Deps, getEstimate, MAX_UPLOAD_BYTES } from "./api";
 import { pgStore } from "./db";
-import index from "./frontend/index.html";
+import index from "../frontend/index.html";
 
 function bucketFromEnv(env = process.env): Deps["bucket"] {
   const { BUCKET_NAME, BUCKET_ENDPOINT, BUCKET_ACCESS_KEY_ID, BUCKET_SECRET_ACCESS_KEY, BUCKET_REGION } = env;

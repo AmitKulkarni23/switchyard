@@ -8,8 +8,8 @@ export default defineRailway(() => {
   const web = service("web", {
     source: github("AmitKulkarni23/switchyard"),
     // Only code changes redeploy; docs and specs pushes don't.
-    build: { watchPatterns: ["src/**", "package.json", "bun.lock", "tsconfig.json", "drizzle/**"] },
-    start: "bun run src/server.ts",
+    build: { watchPatterns: ["backend/**", "frontend/**", "package.json", "bun.lock", "tsconfig.json", "drizzle/**"] },
+    start: "bun run backend/server.ts",
     healthcheck: "/health",
     variables: {
       LLM_FALLBACK_ENABLED: "false",

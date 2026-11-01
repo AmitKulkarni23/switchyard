@@ -34,7 +34,7 @@ A deterministic re-pricer, not an estimate generator. Every figure is computed i
 - Accepts only PDF and CSV. An unknown format gets a clear "unsupported format" error, never a guess.
 - Lines that can't be parsed are shown as "not priced", never silently dropped.
 - The optional OpenRouter LLM fallback is unimplemented and disabled. The app works fully without an API key.
-- Rates come from `src/data/price-books/railway.yaml`, sourced from railway.com/pricing and the Railway docs.
+- Rates come from `backend/data/price-books/railway.yaml`, sourced from railway.com/pricing and the Railway docs.
 
 ## Brand Commitments
 

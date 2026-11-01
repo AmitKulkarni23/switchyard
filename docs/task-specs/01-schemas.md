@@ -1,6 +1,6 @@
 # 01 Schemas
 
-Zod schemas in `src/schema/` with inferred types: `FocusRow`, `Component`, `Workload`, `Assumptions`, `Estimate`.
+Zod schemas in `backend/schema/` with inferred types: `FocusRow`, `Component`, `Workload`, `Assumptions`, `Estimate`.
 
 - `FocusRow`: FOCUS columns used downstream (BilledCost, ChargeCategory, ServiceName, ProviderName, ResourceId, ChargeDescription, ConsumedQuantity, ConsumedUnit, ChargePeriodStart/End) plus `x_` extensions (ServiceCode, UsageType, InstanceType, DatabaseEngine).
 - `Component`: id (stable "01".."NN"), mapping key, category, label, size (vcpu, memoryGb, storageGb, objectStorageGb, egressGb), currentMonthlyCost, source row count.

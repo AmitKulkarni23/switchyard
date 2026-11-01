@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { detect, UnsupportedFormatError } from "../src/detect";
+import { detect, UnsupportedFormatError } from "../backend/detect";
 
 const fixture = async (name: string) => new Uint8Array(await Bun.file(`${import.meta.dir}/fixtures/${name}`).arrayBuffer());
 const text = (s: string) => new TextEncoder().encode(s);

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { adapters } from "../src/adapters";
+import { adapters } from "../backend/adapters";
 import { SAMPLE_LINES, TAX_TOTAL, USAGE_TOTAL } from "./fixtures/sample-bill";
 
 const fixture = async (name: string) => new Uint8Array(await Bun.file(`${import.meta.dir}/fixtures/${name}`).arrayBuffer());

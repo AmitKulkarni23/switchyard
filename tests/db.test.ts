@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { pgStore } from "../src/db";
-import { Workload } from "../src/schema";
+import { pgStore } from "../backend/db";
+import { Workload } from "../backend/schema";
 
 // Runs only against a real database: DATABASE_URL=postgres://... bun test tests/db.test.ts
 test.skipIf(!process.env.DATABASE_URL)("share-link round trip through Postgres", async () => {

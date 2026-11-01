@@ -1,6 +1,6 @@
 # 04 Adapters
 
-`src/adapters/`: one per format, each `(bytes) → { provider, rows: FocusRow[], unparsed }`.
+`backend/adapters/`: one per format, each `(bytes) → { provider, rows: FocusRow[], unparsed }`.
 
 - `focus-csv.ts`: map columns directly.
 - `aws-cur-csv.ts`: CUR 1.0 (`lineItem/...`) and 2.0 (`line_item_...`) headers to FOCUS.

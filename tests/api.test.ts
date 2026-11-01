@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { type Bucket, createEstimate, getEstimate, MAX_UPLOAD_BYTES, type Store } from "../src/api";
-import type { Workload } from "../src/schema";
+import { type Bucket, createEstimate, getEstimate, MAX_UPLOAD_BYTES, type Store } from "../backend/api";
+import type { Workload } from "../backend/schema";
 
 const upload = (data: BlobPart, name = "bill.bin") => {
   const form = new FormData();

@@ -15,9 +15,9 @@
 - **IaC**: all configuration in `.railway/railway.ts`. `railway config plan` before every `railway config apply`. No dashboard-only changes.
 - **Resources**: `web` (Bun server: API + frontend), `postgres` (share links: derived workloads only), `uploads` (private bucket, region sjc; every object deleted right after parsing).
 - **Wiring**: `web` gets `DATABASE_URL` from `postgres` and `BUCKET_NAME`, `BUCKET_ENDPOINT`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` from `uploads` by reference. `BUCKET_REGION` is the literal `auto` (S3 signing region). Bun's S3 client must use path-style URLs against Railway's endpoint; virtual-hosted style gets AccessDenied.
-- **Deploys**: pushes to `main` deploy `web`; watch patterns limit this to `src/**`, `package.json`, `bun.lock`, `tsconfig.json`, `drizzle/**`.
+- **Deploys**: pushes to `main` deploy `web`; watch patterns limit this to `backend/**`, `frontend/**`, `package.json`, `bun.lock`, `tsconfig.json`, `drizzle/**`.
 - **Migrations**: Drizzle migrations in `drizzle/` run at startup.
-- **Start command**: `bun run src/server.ts` so SIGTERM reaches the app.
+- **Start command**: `bun run backend/server.ts` so SIGTERM reaches the app.
 - **Healthcheck**: `/health`.
 - **Template**: the project must be publishable via Project Settings → Generate Template from Project, so anyone can one-click deploy. That means no manual steps after deploy: every variable is either injected by Railway (`PORT`, `DATABASE_URL`, bucket credentials via references) or has a safe default. `OPENROUTER_API_KEY` is optional. A template that deploys from GitHub requires a public repo.
 

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { Assumptions, FocusRow, Workload } from "../src/schema";
+import { Assumptions, FocusRow, Workload } from "../backend/schema";
 
 test("schemas parse a hand-written sample", () => {
   const row = FocusRow.parse({ BilledCost: 12.5, ChargeCategory: "Usage", ProviderName: "AWS", ServiceName: "Amazon Simple Queue Service" });

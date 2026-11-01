@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
-import { adapters } from "../src/adapters";
-import { lookupInstance } from "../src/data/catalog/aws-instances";
-import { normalize } from "../src/normalize";
-import type { Format } from "../src/schema";
+import { adapters } from "../backend/adapters";
+import { lookupInstance } from "../backend/data/catalog/aws-instances";
+import { normalize } from "../backend/normalize";
+import type { Format } from "../backend/schema";
 import { TAX_TOTAL, USAGE_TOTAL } from "./fixtures/sample-bill";
 
 const load = async (format: Format, file: string) => {

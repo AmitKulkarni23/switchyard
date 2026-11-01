@@ -15,7 +15,7 @@ A user uploads a cloud bill (AWS first). The app re-prices that workload on a de
 
 - Code does all math. No LLM in v1.
 - Parsing is deterministic.
-- An optional LLM fallback hook (OpenRouter, via `OPENROUTER_API_KEY`) for unparsed lines is designed as an interface in `src/llm/fallback.ts` but left **unimplemented and disabled** (`LLM_FALLBACK_ENABLED=false`). The app must work fully without an API key. Unparsed lines are shown to the user as "not priced", never silently dropped.
+- An optional LLM fallback hook (OpenRouter, via `OPENROUTER_API_KEY`) for unparsed lines is designed as an interface in `backend/llm/fallback.ts` but left **unimplemented and disabled** (`LLM_FALLBACK_ENABLED=false`). The app must work fully without an API key. Unparsed lines are shown to the user as "not priced", never silently dropped.
 
 ## Pipeline
 
@@ -24,7 +24,7 @@ upload ─▶ detect ─▶ adapter ─▶ normalize ─▶ pricer ─▶ compar
           format    FocusRow[]  Workload     Estimate   Result
 ```
 
-### 1. `src/detect.ts`
+### 1. `backend/detect.ts`
 
 Identifies the input format from **file content, never the file name or extension**:
 
@@ -34,26 +34,26 @@ Identifies the input format from **file content, never the file name or extensio
 
 Returns a format id (e.g. `aws-invoice-pdf`, `aws-cur-csv`, `focus-csv`). Anything else → a clear **unsupported format** error.
 
-### 2. `src/adapters/`
+### 2. `backend/adapters/`
 
 One adapter per input format. Each converts its format to `FocusRow[]` (FinOps FOCUS columns, see https://www.economize.cloud/blog/finops-focus/). FOCUS is the common billing shape, so a new source (GCP, Azure) is a new adapter and nothing downstream changes.
 
-### 3. `src/normalize.ts`
+### 3. `backend/normalize.ts`
 
 `FocusRow[]` → `Workload`: **one row per component, not per bill line**. Several bill lines (instance hours, EBS, snapshots) for the same resource collapse into one component.
 
-- **Catalog lookup** (`src/data/catalog/`): instance type → vCPU / RAM. Example: `m5.xlarge` → 4 vCPU / 16 GB.
-- **Mapping table** (`src/data/mapping.ts`): source service (+ engine) → category. Example: RDS + Postgres → `postgres`.
+- **Catalog lookup** (`backend/data/catalog/`): instance type → vCPU / RAM. Example: `m5.xlarge` → 4 vCPU / 16 GB.
+- **Mapping table** (`backend/data/mapping.ts`): source service (+ engine) → category. Example: RDS + Postgres → `postgres`.
 
-### 4. `src/pricers/railway.ts`
+### 4. `backend/pricers/railway.ts`
 
 `price(workload, assumptions) → Estimate`
 
-Railway bills actual usage (CPU, RAM, egress, volume storage), not provisioned capacity, so utilization matters. Rates come from https://railway.com/pricing and the Railway docs and are stored in `src/data/price-books/railway.yaml` (with the source URL and the date fetched). Pricers never hardcode rates.
+Railway bills actual usage (CPU, RAM, egress, volume storage), not provisioned capacity, so utilization matters. Rates come from https://railway.com/pricing and the Railway docs and are stored in `backend/data/price-books/railway.yaml` (with the source URL and the date fetched). Pricers never hardcode rates.
 
-Every destination is a pricer module with the same signature. Railway is the default; AWS, GCP, Azure and Supabase are later additions in `src/pricers/<name>.ts` with their own price book.
+Every destination is a pricer module with the same signature. Railway is the default; AWS, GCP, Azure and Supabase are later additions in `backend/pricers/<name>.ts` with their own price book.
 
-### 5. `src/compare.ts`
+### 5. `backend/compare.ts`
 
 Builds the result:
 
@@ -72,7 +72,7 @@ Bills show provisioned capacity, not usage. Zero required questions:
 
 Recomputing is pure and cheap (`price` + `compare` on the stored `Workload`), so it runs on every slider move or toggle without re-parsing the bill.
 
-## Schemas (Zod, `src/schema/`)
+## Schemas (Zod, `backend/schema/`)
 
 | Schema | What it is |
 |---|---|
@@ -84,7 +84,7 @@ Recomputing is pure and cheap (`price` + `compare` on the stored `Workload`), so
 
 Zod validates at trust boundaries: adapter output, API requests, price books on load.
 
-## Mapping table (`src/data/mapping.ts`)
+## Mapping table (`backend/data/mapping.ts`)
 
 Hand maintained TypeScript.
 
@@ -112,8 +112,8 @@ Hand maintained TypeScript.
 
 | To add | Change |
 |---|---|
-| A source format | new file in `src/adapters/`, a rule in `detect.ts`, mapping keys |
-| A destination | new `src/pricers/<name>.ts`, `src/data/price-books/<name>.yaml`, a `targets.<name>` entry per mapping row |
+| A source format | new file in `backend/adapters/`, a rule in `detect.ts`, mapping keys |
+| A destination | new `backend/pricers/<name>.ts`, `backend/data/price-books/<name>.yaml`, a `targets.<name>` entry per mapping row |
 
 ## Persistence
 

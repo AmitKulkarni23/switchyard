@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { adapters } from "../src/adapters";
-import { compare } from "../src/compare";
-import { normalize } from "../src/normalize";
+import { adapters } from "../backend/adapters";
+import { compare } from "../backend/compare";
+import { normalize } from "../backend/normalize";
 
 test("bill → estimate end to end (CUR fixture)", async () => {
   const bytes = new Uint8Array(await Bun.file(`${import.meta.dir}/fixtures/aws-cur.csv`).arrayBuffer());

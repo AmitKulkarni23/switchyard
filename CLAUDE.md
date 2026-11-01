@@ -20,7 +20,7 @@ Upload (PDF or CSV) → detect the format from file content → convert to FOCUS
 - **Runtime**: Bun (install, scripts, server, frontend bundling)
 - **Backend**: `Bun.serve` HTTP server, TypeScript
 - **Frontend**: React + Material UI, bundled by Bun's HTML imports (no Vite, no Next.js)
-- **Schemas**: Zod in `src/schema/`
+- **Schemas**: Zod in `backend/schema/`
 - **Database**: Postgres + Drizzle ORM
 - **Uploads**: private Railway bucket, object deleted after parsing
 - **Hosting**: Railway, published as a template (Project Settings → Generate Template from Project)
@@ -31,31 +31,34 @@ Upload (PDF or CSV) → detect the format from file content → convert to FOCUS
 ```
 switchyard/
 ├── .railway/
-│   └── railway.ts            # Railway IaC
-├── src/
-│   ├── server.ts             # Bun.serve: /, /health, /api/*
+│   └── railway.ts            # Railway IaC: web, postgres, uploads bucket
+├── backend/
+│   ├── server.ts             # Bun.serve: /, /health, /api/estimates
+│   ├── api.ts                # upload + share-link handlers
+│   ├── pipeline.ts           # detect → adapter → normalize
 │   ├── detect.ts             # identify format from content (magic bytes, provider text, CSV headers)
 │   ├── adapters/             # one per input format → FocusRow[]
 │   ├── normalize.ts          # FocusRow[] → Workload (catalog lookup + mapping table)
-│   ├── pricers/
-│   │   └── railway.ts        # price(workload, assumptions) → Estimate
+│   ├── pricers/              # railway.ts: price(workload, assumptions); index.ts: registry
 │   ├── compare.ts            # current vs destination, ranges, disappears / no-equivalent lists
 │   ├── llm/fallback.ts       # OpenRouter hook, disabled, unimplemented
 │   ├── schema/               # Zod: FocusRow, Component, Workload, Assumptions, Estimate
-│   ├── data/
-│   │   ├── mapping.ts        # source service + engine → category + per-destination target
-│   │   ├── catalog/          # instance type → vCPU/RAM
-│   │   └── price-books/
-│   │       └── railway.yaml  # rates from railway.com/pricing and Railway docs
-│   └── frontend/
-│       ├── index.html
-│       └── app.tsx           # React + MUI
-├── tests/fixtures/           # synthetic bills only, never real ones
+│   ├── db/                   # Drizzle schema + share-link store
+│   └── data/
+│       ├── mapping.ts        # source service + engine → category + per-destination target
+│       ├── catalog/          # instance type → vCPU/RAM
+│       └── price-books/      # railway.yaml: rates from railway.com/pricing and Railway docs
+├── frontend/
+│   ├── index.html
+│   └── app.tsx               # React + MUI; imports backend/compare.ts to recompute in the browser
+├── drizzle/                  # generated SQL migrations, applied at startup
+├── tests/                    # bun test; fixtures/ are synthetic bills only, never real ones
 ├── docs/
-│   ├── system-specs/         # architecture, decisions
+│   ├── system-specs/         # architecture, security/infra, UI brief
 │   └── task-specs/           # one spec per task, TASK_INDEX.md lists them in order
 ├── package.json
 ├── .env.example
+├── PRODUCT.md                # product context for /impeccable
 ├── CLAUDE.md
 └── README.md
 ```
@@ -89,7 +92,7 @@ railway up             # deploy
 
 ## Reliability
 
-- Start command is `bun run src/server.ts` (not `bun run start`) so SIGTERM reaches the app.
+- Start command is `bun run backend/server.ts` (not `bun run start`) so SIGTERM reaches the app.
 - `/health` returns 200 when the server is up.
 - Validate env vars at startup and fail with a clear log line.
 - Unknown file formats return a clear "unsupported format" error, never a guess.

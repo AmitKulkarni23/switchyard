@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { railwayPriceBook } from "../src/data/price-books";
+import { railwayPriceBook } from "../backend/data/price-books";
 
 test("railway price book validates and cites its sources", () => {
   expect(railwayPriceBook.rates.vcpu_month).toBe(20);

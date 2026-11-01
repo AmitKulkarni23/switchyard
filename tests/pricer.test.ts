@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { price } from "../src/pricers/railway";
-import { Assumptions, Workload } from "../src/schema";
+import { price } from "../backend/pricers/railway";
+import { Assumptions, Workload } from "../backend/schema";
 
 const comp = (id: string, key: string, current: number, size: object) => ({ id, key, category: "x", label: key, sourceService: "AWS", size, currentMonthlyCost: current, rowCount: 1 });
 const workload = Workload.parse({

@@ -1,5 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
-import { classifyUnparsed, fallbackConfig } from "../src/llm/fallback";
+import { classifyUnparsed, fallbackConfig } from "../backend/llm/fallback";
 
 const line = { description: "$0.015 per shard hour", service: "Amazon Kinesis", cost: 10.8, reason: "no mapping" };
 
