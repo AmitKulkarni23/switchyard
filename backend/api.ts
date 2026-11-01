@@ -66,7 +66,7 @@ const DesignRequest = z.strictObject({
   requestsPerDay: z.number().min(0).max(1e9).optional(),
   dataGb: z.number().min(0).max(1e6).optional(),
 });
-const RULES_VERSION = "1";
+const RULES_VERSION = "2"; // bump whenever rules.md or the draft schema changes: invalidates cached drafts
 
 /** POST /api/designs: idea → cheap pair → (tie-breaker) → merged draft. Only the idea text leaves the server. */
 export async function createDesign(req: Request, ip: string, { caller, store, rateLimit }: Deps): Promise<Response> {

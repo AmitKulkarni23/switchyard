@@ -3,7 +3,7 @@ import { isSized, type Part, type PartType, type Tier, type TrafficShape } from 
 
 const TIER_ORDER: Tier[] = ["small", "medium", "large"];
 const SHAPE_ORDER: TrafficShape[] = ["business-hours", "steady", "spiky", "mostly-idle"]; // tie-break preference
-const NUMBERS = ["requestsPerDay", "kbPerRequest", "dataGb", "filesGb"] as const;
+const NUMBERS = ["requestsPerDay", "kbPerRequest", "dataGb", "filesGb", "emailsPerDay", "smsPerDay", "concurrentConnections", "monthlyActiveUsers"] as const;
 
 /** One part per type per draft (first wins). ponytail: two parts of the same type collapse; count them if designs need it. */
 const byType = (d: DesignDraft) => {

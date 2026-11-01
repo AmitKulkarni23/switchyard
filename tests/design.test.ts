@@ -9,7 +9,7 @@ const n = (value: number, assumed = true) => ({ value, assumed });
 const draft = (over: Partial<DesignDraft> = {}): DesignDraft => DesignDraft.parse({
   parts: [{ type: "web-service", tier: "small", why: "booking site" }, { type: "relational-db", tier: "small", why: "appointments" }, { type: "scheduled-job", tier: "small", why: "reminders" }],
   trafficShape: "business-hours",
-  assumptions: { requestsPerDay: n(100000), kbPerRequest: n(50), dataGb: n(2), filesGb: n(0) },
+  assumptions: { requestsPerDay: n(100000), kbPerRequest: n(50), dataGb: n(2), filesGb: n(0), emailsPerDay: n(0), smsPerDay: n(0), concurrentConnections: n(0), monthlyActiveUsers: n(5000) },
   questions: [{ topic: "traffic-volume", text: "How many bookings a day?" }],
   ...over,
 });
@@ -20,7 +20,7 @@ const fake = (answers: Record<string, DesignDraft | Error>): { call: Caller; cal
 };
 
 test("free text and close numbers don't count as disagreement", () => {
-  const b = draft({ parts: draft().parts.map((p) => ({ ...p, why: "different words" })), questions: [{ topic: "traffic-volume", text: "Other wording?" }], assumptions: { requestsPerDay: n(150000), kbPerRequest: n(40), dataGb: n(3), filesGb: n(0.2) } });
+  const b = draft({ parts: draft().parts.map((p) => ({ ...p, why: "different words" })), questions: [{ topic: "traffic-volume", text: "Other wording?" }], assumptions: { ...draft().assumptions, requestsPerDay: n(150000), kbPerRequest: n(40), dataGb: n(3), filesGb: n(0.2) } });
   expect(compareDrafts(draft(), b)).toEqual({ agree: true, disputes: [] });
 });
 
@@ -112,4 +112,30 @@ test("a model that rejects temperature is retried without it", async () => {
 
 test("merged parts keep the models' order", () => {
   expect(mergeDrafts([draft(), draft()]).parts.map((p) => p.type)).toEqual(["web-service", "relational-db", "scheduled-job"]);
+});
+
+test("every worked example in rules.md matches the strict schema", async () => {
+  const rules = await Bun.file(`${import.meta.dir}/../backend/design/rules.md`).text();
+  const examples = rules.split("\n").filter((l) => l.startsWith('{"parts"'));
+  expect(examples.length).toBe(3);
+  for (const e of examples) expect(() => DesignDraft.parse(JSON.parse(e))).not.toThrow();
+});
+
+test("new parts price on both sides", async () => {
+  const { designToWorkload, DEFAULT_ASSUMPTIONS } = await import("../backend/design/parts");
+  const { compareBoth } = await import("../backend/compare");
+  const types = ["web-service", "relational-db", "search", "stream", "messaging", "cdn", "realtime", "auth"] as const;
+  const w = designToWorkload({ idea: "", parts: types.map((type) => ({ type, tier: "small", why: "", on: true })), assumptions: { ...DEFAULT_ASSUMPTIONS, emailsPerDay: 1000, smsPerDay: 100, monthlyActiveUsers: 20000 } });
+  const { railway, aws } = compareBoth(w);
+  const rw = (label: string) => railway.lines.find((l) => l.label === label)!;
+  const a = (label: string) => aws.lines.find((l) => l.label === label)!;
+  // email and SMS go through an external sender: the same cost on both sides (1000 × 30 × $0.10/1000 + 100 × 30 × $0.00645)
+  expect(rw("Email and SMS").destination.low).toBeCloseTo(3 + 19.35, 2);
+  expect(a("Email and SMS").cost.low).toBeCloseTo(3 + 19.35, 2);
+  expect(a("User sign-in").cost.low).toBeCloseTo(10000 * 0.015, 2); // 20k MAU, 10k free
+  expect(rw("User sign-in").destination.low).toBe(0);
+  expect(a("Search").uses).toBe("OpenSearch Service t3.small.search");
+  expect(a("Event stream").uses).toBe("Kinesis Data Streams (1 shard)");
+  expect(a("Web service").formula).not.toMatch(/egress/); // behind the CDN, origin egress is free
+  expect(aws.overhead.map((o) => o.label)).toEqual(["NAT gateway"]);
 });

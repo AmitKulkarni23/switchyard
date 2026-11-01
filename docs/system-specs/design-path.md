@@ -74,6 +74,12 @@ Worked example: *"A booking app for dental clinics. About 500 clinics. Patients 
 | `queue` | messages/day |
 | `object-storage` | stored GB, GB served/month |
 | `cache` | memory GB |
+| `search` | index GB, size tier |
+| `stream` | events/day, size tier (retention) |
+| `messaging` | emails/day, texts/day |
+| `cdn` | GB served/month, requests |
+| `realtime` | connections held at once, messages/day, size tier |
+| `auth` | monthly active users |
 
 Counts of tables, functions or buckets are not modelled: providers bill on usage and storage, and the parts carry usage.
 
@@ -97,6 +103,12 @@ Size tiers map to resources in code: `small` 1 vCPU / 1 GB, `medium` 2 / 4, `lar
 | `key-value-store` | DynamoDB on-demand | Redis or Postgres | Firestore |
 | `queue` | SQS | worker + Redis, or "no equivalent" | Pub/Sub |
 | `object-storage` | S3 | bucket |
+| `search` | OpenSearch Service (t3.small / m6g.large / r6g.large .search) | OpenSearch or Meilisearch service + volume |
+| `stream` | Kinesis Data Streams (1 / 4 / 16 shards) | Redpanda (Kafka-compatible) service + volume |
+| `messaging` | SES + SNS SMS | external sender (SES, Resend, Twilio): same cost both sides |
+| `cdn` | CloudFront (origin egress becomes free) | Railway CDN caching (pricing not yet verified) |
+| `realtime` | API Gateway WebSockets | service holding connections |
+| `auth` | Cognito Essentials (10k MAU free) | auth library in the web service, $0 |
 | required overhead | NAT gateway for private subnets, ALB | none |
 
 The table is a starting point; each pricer task fills and verifies its column against published rates.

@@ -21,7 +21,7 @@ const EXPLICIT: Record<string, InstanceSpec> = {
 export function lookupInstance(type: string): InstanceSpec | undefined {
   const t = type.trim().toLowerCase();
   if (EXPLICIT[t]) return EXPLICIT[t];
-  const bare = t.replace(/^(db|cache)\./, "");
+  const bare = t.replace(/^(db|cache)\./, "").replace(/\.search$/, "");
   // t3a/t4g share t3 shapes
   const burst = bare.match(/^t(3a|4g)\.(.+)$/);
   if (burst) return EXPLICIT[`t3.${burst[2]}`];
@@ -32,4 +32,4 @@ export function lookupInstance(type: string): InstanceSpec | undefined {
 }
 
 /** Pull an instance type out of a usage type or charge description ("BoxUsage:m5.xlarge", "per RDS db.r6g.large ..."). */
-export const findInstanceType = (s: string) => s.match(/\b((?:db\.|cache\.)?[a-z]\d[a-z]{0,3}\.(?:nano|micro|small|medium|large|\d*xlarge))\b/i)?.[1]?.toLowerCase();
+export const findInstanceType = (s: string) => s.match(/\b((?:db\.|cache\.)?[a-z]\d[a-z]{0,3}\.(?:nano|micro|small|medium|large|\d*xlarge)(?:\.search)?)\b/i)?.[1]?.toLowerCase();

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { PART_TYPES } from "./parts";
 
 /** What a model may return. Strict JSON schema: every field required, no extras, no provider names possible. */
-export const QUESTION_TOPICS = ["traffic-volume", "traffic-shape", "data-size", "background-work", "file-uploads"] as const;
+export const QUESTION_TOPICS = ["traffic-volume", "traffic-shape", "data-size", "background-work", "file-uploads", "active-users", "messaging-volume", "search-needed"] as const;
 export type QuestionTopic = (typeof QUESTION_TOPICS)[number];
 
 const Num = z.strictObject({ value: z.number().min(0), assumed: z.boolean() });
@@ -10,7 +10,7 @@ const Num = z.strictObject({ value: z.number().min(0), assumed: z.boolean() });
 export const DesignDraft = z.strictObject({
   parts: z.array(z.strictObject({ type: z.enum(PART_TYPES), tier: z.enum(["small", "medium", "large"]), why: z.string().max(200) })).min(1).max(12),
   trafficShape: z.enum(["steady", "business-hours", "spiky", "mostly-idle"]),
-  assumptions: z.strictObject({ requestsPerDay: Num, kbPerRequest: Num, dataGb: Num, filesGb: Num }),
+  assumptions: z.strictObject({ requestsPerDay: Num, kbPerRequest: Num, dataGb: Num, filesGb: Num, emailsPerDay: Num, smsPerDay: Num, concurrentConnections: Num, monthlyActiveUsers: Num }),
   questions: z.array(z.strictObject({ topic: z.enum(QUESTION_TOPICS), text: z.string().max(160) })).max(3),
 });
 export type DesignDraft = z.infer<typeof DesignDraft>;
@@ -24,4 +24,7 @@ export const TOPIC_OPTIONS: Record<QuestionTopic, { label: string; value: string
   "data-size": [{ label: "Under 1 GB", value: 0.5 }, { label: "1–10 GB", value: 5 }, { label: "10–100 GB", value: 50 }, { label: "Over 100 GB", value: 250 }],
   "background-work": [{ label: "Yes", value: "yes" }, { label: "No", value: "no" }],
   "file-uploads": [{ label: "Yes", value: "yes" }, { label: "No", value: "no" }],
+  "active-users": [{ label: "Under 1k a month", value: 500 }, { label: "1k–10k", value: 5_000 }, { label: "10k–100k", value: 50_000 }, { label: "Over 100k", value: 250_000 }],
+  "messaging-volume": [{ label: "Under 100 a day", value: 50 }, { label: "100–1k", value: 500 }, { label: "1k–10k", value: 5_000 }, { label: "Over 10k", value: 30_000 }],
+  "search-needed": [{ label: "Yes, full-text search", value: "yes" }, { label: "No, simple filters", value: "no" }],
 };

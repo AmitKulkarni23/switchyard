@@ -94,7 +94,7 @@ function App() {
       setState({ kind: "design", design: {
         idea: idea.trim(), parts: r.parts, panelNote: panelNote + (r.cached ? " (Saved draft.)" : ""),
         questions: r.questions,
-        assumptions: { requestsPerDay: Math.round(r.assumptions.requestsPerDay), kbPerRequest: r.assumptions.kbPerRequest, dataGb: r.assumptions.dataGb, filesGb: r.assumptions.filesGb, trafficShape: r.trafficShape },
+        assumptions: { ...r.assumptions, requestsPerDay: Math.round(r.assumptions.requestsPerDay), trafficShape: r.trafficShape },
       } });
     } catch (e) {
       if ((e as Error).name === "AbortError") return setState({ kind: "entry" });

@@ -16,6 +16,13 @@ sources:
   - https://aws.amazon.com/vpc/pricing/
   - https://aws.amazon.com/elasticloadbalancing/pricing/
   - https://aws.amazon.com/ec2/pricing/on-demand/
+  - https://aws.amazon.com/opensearch-service/pricing/
+  - https://aws.amazon.com/kinesis/data-streams/pricing/
+  - https://aws.amazon.com/ses/pricing/
+  - https://aws.amazon.com/sns/sms-pricing/
+  - https://aws.amazon.com/cloudfront/pricing/
+  - https://aws.amazon.com/api-gateway/pricing/
+  - https://aws.amazon.com/cognito/pricing/
 rates:
   fargate_vcpu_hour: 0.04048
   fargate_gb_hour: 0.004445
@@ -36,3 +43,15 @@ rates:
   dynamodb_storage_gb_month: 0.25
   sqs_request_million: 0.40
   s3_storage_gb_month: 0.023
+  opensearch_hour: { small: 0.036, medium: 0.128, large: 0.167 }   # t3.small.search, m6g.large.search, r6g.large.search
+  opensearch_storage_gb_month: 0.122
+  kinesis_shard_hour: 0.015
+  kinesis_put_unit_million: 0.014
+  ses_email_thousand: 0.10
+  sms_us_message: 0.00645
+  cloudfront_gb: 0.085
+  cloudfront_https_10k: 0.01
+  apigw_websocket_message_million: 1.00
+  apigw_websocket_connection_minute_million: 0.25
+  cognito_mau: 0.015
+  cognito_free_mau: 10000

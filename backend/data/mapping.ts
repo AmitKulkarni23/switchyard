@@ -46,6 +46,16 @@ export const MAPPING: Record<string, Mapping> = {
   "part:queue": { category: "queue", label: "Queue", sizing: "none", targets: service("Railway Redis (as a queue)", "A small Redis service backing a job queue.") },
   "part:object-storage": { category: "object-storage", label: "File storage", sizing: "none", targets: service("Railway bucket", "Free egress.") },
   "part:cache": { category: "redis", label: "Cache", sizing: "none", targets: service("Railway Redis", "Redis service.") },
+  "part:search": { category: "search", label: "Search", sizing: "none", targets: service("OpenSearch or Meilisearch on Railway", "A search service from a template, with a volume for the index.") },
+  "part:stream": { category: "stream", label: "Event stream", sizing: "none", targets: service("Kafka-compatible broker (Redpanda) on Railway", "A broker service with a volume for retained events.") },
+  "part:messaging": { category: "messaging", label: "Email and SMS", sizing: "none", targets: none("Sent through an external provider (SES, Resend, Twilio) at the same cost.") },
+  "part:cdn": { category: "cdn", label: "CDN", sizing: "none", targets: service("Railway CDN caching", "Cached responses at Railway's edge; egress is still billed on the service. CDN pricing not yet verified.") },
+  "part:realtime": { category: "compute", label: "Realtime (WebSockets)", sizing: "none", targets: service("Railway service", "A service holding WebSocket connections, billed on use.") },
+  "part:auth": { category: "auth", label: "User sign-in", sizing: "none", targets: service("An auth library inside your web service", "No separate charge; or use a hosted provider such as Clerk or Auth0.") },
+  "aws:opensearch": { category: "search", label: "OpenSearch Service", sizing: "instance", targets: service("OpenSearch or Meilisearch on Railway", "A search service with a volume for the index.") },
+  "aws:kinesis": { category: "stream", label: "Kinesis", sizing: "none", targets: none("Run a Kafka-compatible broker (Redpanda) on Railway to replace it; not priced from shards.") },
+  "aws:ses": { category: "messaging", label: "SES", sizing: "none", targets: none("Keep sending through SES (or another provider) from Railway.") },
+  "aws:cognito": { category: "auth", label: "Cognito", sizing: "none", targets: none("Keep Cognito, or move sign-in into your app or a hosted provider.") },
   "aws:route53": { category: "dns", label: "Route 53", sizing: "none", targets: none("Keep your DNS provider.") },
 };
 
@@ -56,7 +66,8 @@ const NAME_TO_CODE: [RegExp, string][] = [
   [/Simple Queue/i, "AWSQueueService"], [/DynamoDB/i, "AmazonDynamoDB"], [/Simple Notification/i, "AmazonSNS"],
   [/Lambda/i, "AWSLambda"], [/CloudFront/i, "AmazonCloudFront"], [/Route ?53/i, "AmazonRoute53"], [/CloudWatch/i, "AmazonCloudWatch"],
   [/Secrets Manager/i, "AWSSecretsManager"], [/Key Management/i, "awskms"], [/Container Registry|^ECR/i, "AmazonECR"],
-  [/Container Service|^ECS|Fargate/i, "AmazonECS"], [/DocumentDB/i, "AmazonDocDB"], [/Virtual Private Cloud|^VPC/i, "AmazonVPC"], [/Support/i, "AWSSupport"],
+  [/Container Service|^ECS|Fargate/i, "AmazonECS"], [/OpenSearch|Elasticsearch/i, "AmazonES"], [/Kinesis/i, "AmazonKinesis"],
+  [/Simple Email|^SES/i, "AmazonSES"], [/Cognito/i, "AmazonCognito"], [/DocumentDB/i, "AmazonDocDB"], [/Virtual Private Cloud|^VPC/i, "AmazonVPC"], [/Support/i, "AWSSupport"],
 ];
 export const serviceCode = (name: string) => NAME_TO_CODE.find(([re]) => re.test(name))?.[1];
 
@@ -97,6 +108,10 @@ export function classify(code: string, usage: string, engine = ""): string | und
     case "AWSLambda": return "aws:lambda";
     case "AmazonCloudFront": return "aws:cloudfront";
     case "AmazonRoute53": return "aws:route53";
+    case "AmazonES": return /ESInstance|Instance Hour|instance hour|\.search/i.test(t) || /storage|GB-?Mo/i.test(t) ? "aws:opensearch" : undefined;
+    case "AmazonKinesis": return "aws:kinesis";
+    case "AmazonSES": return "aws:ses";
+    case "AmazonCognito": return "aws:cognito";
   }
   return code.startsWith("AWSSupport") ? "aws:support" : undefined;
 }

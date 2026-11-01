@@ -10,11 +10,11 @@ test("bill → estimate end to end (CUR fixture)", async () => {
 
   expect(e.destination).toBe("railway");
   expect(e.plan.name).toBe("Pro");
-  expect(e.current).toBe(1168.63); // usage total minus the unpriced Kinesis line
-  expect(e.notPriced.map((n) => n.service)).toEqual(["Amazon Kinesis"]);
+  expect(e.current).toBe(1179.43); // every usage line is mapped
+  expect(e.notPriced).toEqual([]);
   expect(e.excluded).toHaveLength(1);
   expect(e.disappears.map((l) => l.label).sort()).toEqual(["AWS Support", "CloudWatch", "Inter-AZ / regional transfer", "Load balancers", "NAT gateway", "S3 requests"]);
-  expect(e.noEquivalent.map((l) => l.label).sort()).toEqual(["DynamoDB", "SQS"]);
+  expect(e.noEquivalent.map((l) => l.label).sort()).toEqual(["DynamoDB", "Kinesis", "SQS"]);
   expect(e.destinationTotal.low).toBeLessThan(e.destinationTotal.high);
   expect(e.difference.low).toBe(Math.round((e.current - e.destinationTotal.high) * 100) / 100);
 

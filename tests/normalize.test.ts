@@ -31,7 +31,8 @@ for (const [format, file] of [["focus-csv", "focus.csv"], ["aws-cur-csv", "aws-c
     expect(by("aws:data-transfer:internet")[0]!.size.egressGb).toBe(1200);
     expect(by("aws:s3:storage")[0]!.size.objectStorageGb).toBe(600);
     expect(by("aws:vpc:nat-gateway")[0]!.currentMonthlyCost).toBe(87.3);
-    expect(w.unparsed.map((u) => u.service)).toEqual(["Amazon Kinesis"]);
+    expect(w.unparsed).toEqual([]);
+    expect(by("aws:kinesis")[0]!.currentMonthlyCost).toBe(10.8);
     expect(w.components.map((c) => c.id).slice(0, 3)).toEqual(["01", "02", "03"]);
     expect(w.components[0]!.currentMonthlyCost).toBeGreaterThanOrEqual(w.components[1]!.currentMonthlyCost);
   });
@@ -42,4 +43,12 @@ test("catalog knows common shapes and refuses to guess", () => {
   expect(lookupInstance("db.r6g.large")).toEqual({ vcpu: 2, memoryGb: 16 });
   expect(lookupInstance("t4g.small")).toEqual({ vcpu: 2, memoryGb: 2 });
   expect(lookupInstance("x2iedn.32xlarge")).toBeUndefined();
+});
+
+test("OpenSearch lines on a bill are recognised and sized", async () => {
+  const { classify } = await import("../backend/data/mapping");
+  const { findInstanceType } = await import("../backend/data/catalog/aws-instances");
+  expect(classify("AmazonES", "USE1-ESInstance:m6g.large.search $0.128 per m6g.large.search instance hour")).toBe("aws:opensearch");
+  expect(findInstanceType("ESInstance:m6g.large.search")).toBe("m6g.large.search");
+  expect(lookupInstance("m6g.large.search")).toEqual({ vcpu: 2, memoryGb: 8 });
 });

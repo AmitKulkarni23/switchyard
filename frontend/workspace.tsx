@@ -4,7 +4,7 @@ import { compareBoth } from "../backend/compare";
 import { railwayPriceBook } from "../backend/data/price-books";
 import { awsPriceBook } from "../backend/pricers/aws";
 import { TOPIC_OPTIONS } from "../backend/design/draft";
-import { type Design, designToWorkload, isSized, PART_LABEL, PART_TYPES, type PartType, SHAPE_UTILIZATION, type Tier, type TrafficShape } from "../backend/design/parts";
+import { type Design, designToWorkload, isSized, PART_ASSUMPTIONS, PART_LABEL, PART_TYPES, type PartType, SHAPE_UTILIZATION, type Tier, type TrafficShape } from "../backend/design/parts";
 import type { Workload } from "../backend/schema";
 import { Mark, Masthead } from "./results";
 import { condensed, figures, ink, label, muted, red, rule, wash } from "./theme";
@@ -168,6 +168,9 @@ function Field({ label: l, children }: { label: string; children: ReactNode }) {
   return <Box sx={{ display: "grid", gap: 0.5 }}><Typography sx={{ ...label }}>{l}</Typography>{children}</Box>;
 }
 
+const EXTRA: ["emailsPerDay" | "smsPerDay" | "concurrentConnections" | "monthlyActiveUsers", string][] = [
+  ["emailsPerDay", "Emails a day"], ["smsPerDay", "Texts a day"], ["concurrentConnections", "Connected at once"], ["monthlyActiveUsers", "Monthly active users"],
+];
 const SHAPES: [TrafficShape, string][] = [["steady", "Steady"], ["business-hours", "Business hours"], ["spiky", "Spiky"], ["mostly-idle", "Mostly idle"]];
 
 function DesignPanel({ design, setDesign }: { design: Design; setDesign: (d: Design) => void }) {
@@ -183,12 +186,15 @@ function DesignPanel({ design, setDesign }: { design: Design; setDesign: (d: Des
     if (q.topic === "traffic-volume") a2.requestsPerDay = Number(value);
     if (q.topic === "traffic-shape") a2.trafficShape = value as TrafficShape;
     if (q.topic === "data-size") a2.dataGb = Number(value);
+    if (q.topic === "active-users") a2.monthlyActiveUsers = Number(value);
+    if (q.topic === "messaging-volume") a2.emailsPerDay = Number(value);
     const ensure = (types: PartType[], on: boolean) => {
       let parts = next.parts.map((p) => (types.includes(p.type) ? { ...p, on } : p));
       if (on) for (const t of types) if (!parts.some((p) => p.type === t)) parts = [...parts, { type: t, tier: "small" as Tier, why: "you said yes", on: true }];
       next = { ...next, parts };
     };
     if (q.topic === "background-work") ensure(["background-worker", "queue"], value === "yes");
+    if (q.topic === "search-needed") ensure(["search"], value === "yes");
     if (q.topic === "file-uploads") { ensure(["object-storage"], value === "yes"); if (value === "yes" && !a2.filesGb) a2.filesGb = 20; }
     setDesign({ ...next, assumptions: a2 });
   };
@@ -222,6 +228,9 @@ function DesignPanel({ design, setDesign }: { design: Design; setDesign: (d: Des
           <Field label="KB per response"><TextField size="small" type="number" value={a.kbPerRequest} onChange={(e) => setA({ kbPerRequest: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, "aria-label": "KB per response" } }} /></Field>
           <Field label="Database GB"><TextField size="small" type="number" value={a.dataGb} onChange={(e) => setA({ dataGb: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, "aria-label": "Database GB" } }} /></Field>
           <Field label="Stored files GB"><TextField size="small" type="number" value={a.filesGb} onChange={(e) => setA({ filesGb: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, "aria-label": "Stored files GB" } }} /></Field>
+          {EXTRA.filter(([k]) => design.parts.some((p) => p.on && PART_ASSUMPTIONS[p.type]?.includes(k))).map(([k, l]) => (
+            <Field key={k} label={l}><TextField size="small" type="number" value={a[k]} onChange={(e) => setA({ [k]: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, "aria-label": l } }} /></Field>
+          ))}
         </Box>
       </Box>
 
