@@ -14,6 +14,7 @@ export function openRouterCaller(apiKey: string, fetchImpl: typeof fetch = fetch
   return async (model, input, signal) => {
     const messages: { role: string; content: string }[] = [{ role: "system", content: await loadRules() }, { role: "user", content: userMessage(input) }];
     let lastError = "";
+    let temperature: number | undefined = 0; // dropped if the model doesn't accept it (e.g. GPT-6.1 Sol)
     for (let attempt = 0; attempt < 2; attempt++) {
       const res = await fetchImpl(ENDPOINT, {
         method: "POST",
@@ -21,14 +22,23 @@ export function openRouterCaller(apiKey: string, fetchImpl: typeof fetch = fetch
         headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json", "x-title": "SwitchYard" },
         body: JSON.stringify({
           model,
-          temperature: 0,
+          temperature,
           max_tokens: 2000,
           messages,
           response_format: { type: "json_schema", json_schema: { name: "design_draft", strict: true, schema: draftJsonSchema } },
           provider: { require_parameters: true }, // only route to providers that honour the schema
         }),
       });
-      if (!res.ok) throw new Error(`${model}: HTTP ${res.status}`);
+      if (res.status === 404 && temperature !== undefined) {
+        // require_parameters found no provider: the model rejects `temperature`. Retry once without it.
+        temperature = undefined;
+        attempt--;
+        continue;
+      }
+      if (!res.ok) {
+        const detail = ((await res.json().catch(() => null))?.error?.message ?? "").slice(0, 160);
+        throw new Error(`${model}: HTTP ${res.status}${detail ? ` ${detail}` : ""}`);
+      }
       const content: string = (await res.json())?.choices?.[0]?.message?.content ?? "";
       try {
         return DesignDraft.parse(JSON.parse(content.replace(/^```(?:json)?\s*|\s*```$/g, "")));

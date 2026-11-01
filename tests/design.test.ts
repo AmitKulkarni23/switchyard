@@ -98,3 +98,14 @@ test("POST /api/designs: 503 without a key, 400 on short ideas, cache hit skips 
   expect((await createDesign(req({ idea: idea + " Two." }), "ip2", { caller: call, rateLimit: limit })).status).toBe(200);
   expect((await createDesign(req({ idea: idea + " Three." }), "ip2", { caller: call, rateLimit: limit })).status).toBe(429);
 });
+
+test("a model that rejects temperature is retried without it", async () => {
+  const bodies: any[] = [];
+  const fetchImpl = (async (_u: string, init: RequestInit) => {
+    const b = JSON.parse(init.body as string);
+    bodies.push(b);
+    return "temperature" in b ? Response.json({ error: { message: "No endpoints found" } }, { status: 404 }) : Response.json({ choices: [{ message: { content: JSON.stringify(draft()) } }] });
+  }) as unknown as typeof fetch;
+  await openRouterCaller("k", fetchImpl)("openai/gpt-6.1-sol", { idea: "x" });
+  expect(bodies.map((b) => "temperature" in b)).toEqual([true, false]);
+});

@@ -11,7 +11,11 @@ export const PANEL = {
   tiebreak: process.env.DESIGN_TIEBREAK_MODEL ?? "openai/gpt-6.1-sol",
 };
 
-export class PanelError extends Error {}
+export class PanelError extends Error {
+  constructor(message: string, readonly detail = "") {
+    super(message);
+  }
+}
 
 async function run(call: Caller, model: string, input: DraftInput, signal?: AbortSignal): Promise<{ run: ModelRun; draft?: DesignDraft }> {
   const t0 = performance.now();
@@ -37,6 +41,9 @@ export async function draftDesign(input: DraftInput, call: Caller, panel = PANEL
   const tie = await run(call, panel.tiebreak, input, signal);
   const drafts = [...ok, ...(tie.draft ? [tie.draft] : [])];
   const models = [...first.map((r) => r.run), tie.run];
-  if (drafts.length < 2) throw new PanelError(`Only ${drafts.length} of ${models.length} models answered. Try again, or start from a starter design.`);
+  if (drafts.length < 2) {
+    const why = models.filter((m) => !m.ok).map((m) => m.error).join("; ");
+    throw new PanelError(`Only ${drafts.length} of ${models.length} models answered. Try again, or start from a starter design.`, why);
+  }
   return { ...mergeDrafts(drafts), models, escalated: true, disputes: cmp.disputes };
 }

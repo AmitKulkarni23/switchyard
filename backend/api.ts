@@ -86,7 +86,10 @@ export async function createDesign(req: Request, ip: string, { caller, store, ra
     await store?.saveDraft?.(key, result, result.escalated).catch((e) => console.error("draft cache save failed:", e instanceof Error ? e.message : e));
     return json(result);
   } catch (e) {
-    if (e instanceof PanelError) return fail(502, e.message);
+    if (e instanceof PanelError) {
+      console.error("design panel failed:", e.detail); // provider errors stay in logs; never the idea text
+      return fail(502, e.message);
+    }
     throw e;
   }
 }
