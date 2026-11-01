@@ -7,7 +7,7 @@ Work on the first task not struck through whose dependencies are done.
 3. ~~[03 Detect](03-detect.md): depends on 01~~
 4. ~~[04 Adapters](04-adapters.md): depends on 03~~
 5. ~~[05 Normalize](05-normalize.md): depends on 04~~
-6. [06 Railway pricer](06-pricer.md): depends on 02, 05
+6. ~~[06 Railway pricer](06-pricer.md): depends on 02, 05~~
 7. [07 Compare](07-compare.md): depends on 06
 8. [08 LLM fallback hook](08-llm-hook.md): depends on 05
 9. [09 Upload API](09-upload-api.md): depends on 07
