@@ -27,10 +27,13 @@ const deps: Deps = { bucket: bucketFromEnv(), store: await storeFromEnv() };
 
 const server = Bun.serve({
   port: Number(process.env.PORT ?? 3000),
+  development: process.env.NODE_ENV !== "production", // production: minified bundle, no HMR
   maxRequestBodySize: MAX_UPLOAD_BYTES + 1024 * 1024,
   routes: {
     "/": index,
     "/health": new Response("ok"),
+    // Synthetic demo bill for "Try a sample bill"; never a real one.
+    "/sample-bill.pdf": () => new Response(Bun.file(`${import.meta.dir}/../tests/fixtures/aws-invoice.pdf`), { headers: { "content-type": "application/pdf" } }),
     "/api/estimates": { POST: (req) => createEstimate(req, deps) },
     "/api/estimates/:id": { GET: (req) => getEstimate(req.params.id, deps) },
   },

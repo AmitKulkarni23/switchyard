@@ -12,6 +12,7 @@ export default defineRailway(() => {
     start: "bun run backend/server.ts",
     healthcheck: "/health",
     variables: {
+      NODE_ENV: "production",
       LLM_FALLBACK_ENABLED: "false",
       DATABASE_URL: db.env.DATABASE_URL,
       BUCKET_NAME: ref(uploads, "BUCKET"),

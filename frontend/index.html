@@ -3,7 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SwitchYard</title>
+    <meta name="description" content="Upload a cloud bill and see what the same workload costs on Railway, as a range, with what disappears and what has no equivalent." />
+    <title>SwitchYard: what your cloud bill costs on Railway</title>
+    <style>
+      html { scrollbar-color: #111 #f4f3f0; }
+      ::selection { background: #c8102e; color: #fff; }
+      :focus-visible { outline: 2px solid #c8102e; outline-offset: 2px; }
+      a { color: inherit; text-underline-offset: 3px; }
+      input, textarea { caret-color: #c8102e; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+      @media print {
+        .no-print { display: none !important; }
+        header { background: none !important; color: #111 !important; border-bottom: 4px solid #111; }
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
