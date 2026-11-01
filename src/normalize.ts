@@ -83,7 +83,7 @@ export function normalize(input: { provider: string; format: Format; rows: Focus
     components.push({
       key: g.key,
       category: m.category,
-      label: m.label,
+      label: g.key === "aws:ec2:instance" && g.instanceType ? `EC2 ${g.instanceType}` : m.label,
       sourceService: g.rows[0]!.ServiceName,
       detail,
       size,
