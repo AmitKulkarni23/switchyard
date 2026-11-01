@@ -118,3 +118,7 @@ Hand maintained TypeScript.
 ## Persistence
 
 Postgres + Drizzle ORM. Store only the derived `Workload` and results (no raw bill), so a results page can be reloaded and recomputed. Added when the first feature needs it.
+
+## Design path
+
+Ideas (text), IaC templates and bills all converge on the Workload IR. See `design-path.md` (proposed).
