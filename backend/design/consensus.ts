@@ -1,4 +1,4 @@
-import type { DesignDraft, QuestionTopic } from "./draft";
+import { ANSWERED_BY_PART, type DesignDraft, type QuestionTopic, TOPIC_TEXT } from "./draft";
 import { isSized, type Part, type PartType, type Tier, type TrafficShape } from "./parts";
 
 const TIER_ORDER: Tier[] = ["small", "medium", "large"];
@@ -59,17 +59,15 @@ export function mergeDrafts(drafts: DesignDraft[]): Merged {
     return { type: t, tier: mode(having.map((p) => p.tier), TIER_ORDER), why: having[0]!.why, agreement: `${having.length}/${n}`, on: having.length * 2 > n };
   });
 
-  const topicCount = new Map<QuestionTopic, { n: number; text: string }>();
-  for (const d of drafts) for (const q of new Map(d.questions.map((q) => [q.topic, q])).values()) {
-    const cur = topicCount.get(q.topic);
-    topicCount.set(q.topic, { n: (cur?.n ?? 0) + 1, text: cur?.text ?? q.text });
-  }
+  const topicCount = new Map<QuestionTopic, number>();
+  for (const d of drafts) for (const t of new Set(d.questions)) topicCount.set(t, (topicCount.get(t) ?? 0) + 1);
+  const settled = (t: QuestionTopic) => parts.some((p) => p.on && p.type === ANSWERED_BY_PART[t]);
 
   return {
     parts,
     trafficShape: mode(drafts.map((d) => d.trafficShape), SHAPE_ORDER),
     assumptions: Object.fromEntries(NUMBERS.map((k) => [k, median(drafts.map((d) => d.assumptions[k].value))])) as Merged["assumptions"],
     assumed: NUMBERS.filter((k) => drafts.some((d) => d.assumptions[k].assumed)),
-    questions: [...topicCount].sort((a, b) => b[1].n - a[1].n).slice(0, 3).map(([topic, q]) => ({ topic, text: q.text })),
+    questions: [...topicCount].filter(([t]) => !settled(t)).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([topic]) => ({ topic, text: TOPIC_TEXT[topic] })),
   };
 }

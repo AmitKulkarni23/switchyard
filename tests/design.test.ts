@@ -10,7 +10,7 @@ const draft = (over: Partial<DesignDraft> = {}): DesignDraft => DesignDraft.pars
   parts: [{ type: "web-service", tier: "small", why: "booking site" }, { type: "relational-db", tier: "small", why: "appointments" }, { type: "scheduled-job", tier: "small", why: "reminders" }],
   trafficShape: "business-hours",
   assumptions: { requestsPerDay: n(100000), kbPerRequest: n(50), dataGb: n(2), filesGb: n(0), emailsPerDay: n(0), smsPerDay: n(0), concurrentConnections: n(0), monthlyActiveUsers: n(5000) },
-  questions: [{ topic: "traffic-volume", text: "How many bookings a day?" }],
+  questions: ["traffic-volume"],
   ...over,
 });
 const panel = { primary: ["glm", "deepseek"], tiebreak: "sol" };
@@ -20,7 +20,7 @@ const fake = (answers: Record<string, DesignDraft | Error>): { call: Caller; cal
 };
 
 test("free text and close numbers don't count as disagreement", () => {
-  const b = draft({ parts: draft().parts.map((p) => ({ ...p, why: "different words" })), questions: [{ topic: "traffic-volume", text: "Other wording?" }], assumptions: { ...draft().assumptions, requestsPerDay: n(150000), kbPerRequest: n(40), dataGb: n(3), filesGb: n(0.2) } });
+  const b = draft({ parts: draft().parts.map((p) => ({ ...p, why: "different words" })), assumptions: { ...draft().assumptions, requestsPerDay: n(150000), kbPerRequest: n(40), dataGb: n(3), filesGb: n(0.2) } });
   expect(compareDrafts(draft(), b)).toEqual({ agree: true, disputes: [] });
 });
 
@@ -61,7 +61,7 @@ test("a failed cheap model escalates; two failures is an error", async () => {
 test("median numbers and top questions", () => {
   const m = mergeDrafts([draft(), draft({ assumptions: { ...draft().assumptions, requestsPerDay: n(300000, false) } }), draft({ assumptions: { ...draft().assumptions, requestsPerDay: n(200000) } })]);
   expect(m.assumptions.requestsPerDay).toBe(200000);
-  expect(m.questions).toEqual([{ topic: "traffic-volume", text: "How many bookings a day?" }]);
+  expect(m.questions).toEqual([{ topic: "traffic-volume", text: "Roughly how many requests a day (page loads and API calls)?" }]);
 });
 
 test("OpenRouter caller sends strict schema, only the idea, and retries invalid output once", async () => {
@@ -75,7 +75,7 @@ test("OpenRouter caller sends strict schema, only the idea, and retries invalid 
   const d = await openRouterCaller("key", fetchImpl)("z-ai/glm-5.3", { idea: "A booking app", dataGb: 2 });
   expect(d.parts).toHaveLength(3);
   expect(bodies).toHaveLength(2);
-  expect(bodies[0]).toMatchObject({ model: "z-ai/glm-5.3", temperature: 0, response_format: { type: "json_schema", json_schema: { strict: true } } });
+  expect(bodies[0]).toMatchObject({ model: "z-ai/glm-5.3", temperature: 0, reasoning: { effort: "low" }, response_format: { type: "json_schema", json_schema: { strict: true } } });
   expect(bodies[0].messages[1].content).toBe(userMessage({ idea: "A booking app", dataGb: 2 }));
   expect(bodies[1].messages.at(-1).content).toMatch(/did not match the schema/);
 });
@@ -99,7 +99,7 @@ test("POST /api/designs: 503 without a key, 400 on short ideas, cache hit skips 
   expect((await createDesign(req({ idea: idea + " Three." }), "ip2", { caller: call, rateLimit: limit })).status).toBe(429);
 });
 
-test("a model that rejects temperature is retried without it", async () => {
+test("a model that rejects temperature or reasoning settings is retried without them", async () => {
   const bodies: any[] = [];
   const fetchImpl = (async (_u: string, init: RequestInit) => {
     const b = JSON.parse(init.body as string);
@@ -107,7 +107,7 @@ test("a model that rejects temperature is retried without it", async () => {
     return "temperature" in b ? Response.json({ error: { message: "No endpoints found" } }, { status: 404 }) : Response.json({ choices: [{ message: { content: JSON.stringify(draft()) } }] });
   }) as unknown as typeof fetch;
   await openRouterCaller("k", fetchImpl)("openai/gpt-6.1-sol", { idea: "x" });
-  expect(bodies.map((b) => "temperature" in b)).toEqual([true, false]);
+  expect(bodies.map((b) => "temperature" in b || "reasoning" in b)).toEqual([true, false]);
 });
 
 test("merged parts keep the models' order", () => {
@@ -138,4 +138,11 @@ test("new parts price on both sides", async () => {
   expect(a("Event stream").uses).toBe("Kinesis Data Streams (1 shard)");
   expect(a("Web service").formula).not.toMatch(/egress/); // behind the CDN, origin egress is free
   expect(aws.overhead.map((o) => o.label)).toEqual(["NAT gateway"]);
+});
+
+test("questions the design already answers are dropped; wording comes from code", () => {
+  const withPhotos = draft({ parts: [...draft().parts, { type: "object-storage", tier: "small", why: "photos" }], questions: ["file-uploads", "data-size", "traffic-volume"] });
+  const m = mergeDrafts([withPhotos, withPhotos]);
+  expect(m.questions.map((q) => q.topic)).toEqual(["data-size", "traffic-volume"]);
+  expect(new Set(m.questions.map((q) => q.text)).size).toBe(2);
 });

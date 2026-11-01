@@ -11,11 +11,28 @@ export const DesignDraft = z.strictObject({
   parts: z.array(z.strictObject({ type: z.enum(PART_TYPES), tier: z.enum(["small", "medium", "large"]), why: z.string().max(200) })).min(1).max(12),
   trafficShape: z.enum(["steady", "business-hours", "spiky", "mostly-idle"]),
   assumptions: z.strictObject({ requestsPerDay: Num, kbPerRequest: Num, dataGb: Num, filesGb: Num, emailsPerDay: Num, smsPerDay: Num, concurrentConnections: Num, monthlyActiveUsers: Num }),
-  questions: z.array(z.strictObject({ topic: z.enum(QUESTION_TOPICS), text: z.string().max(160) })).max(3),
+  // Models only pick topics; code supplies the wording and the answers, so a question always matches its options.
+  questions: z.array(z.enum(QUESTION_TOPICS)).max(3),
 });
 export type DesignDraft = z.infer<typeof DesignDraft>;
 
 export const draftJsonSchema = z.toJSONSchema(DesignDraft);
+
+export const TOPIC_TEXT: Record<QuestionTopic, string> = {
+  "traffic-volume": "Roughly how many requests a day (page loads and API calls)?",
+  "traffic-shape": "When is traffic busiest?",
+  "data-size": "How big will the database be after a year?",
+  "background-work": "Is there slow work that runs in the background (imports, video, bulk email)?",
+  "file-uploads": "Do users upload files or images?",
+  "active-users": "How many people will sign in each month?",
+  "messaging-volume": "How many emails or texts a day?",
+  "search-needed": "Do users need full-text search?",
+};
+
+/** A topic the design already settles is never asked. */
+export const ANSWERED_BY_PART: Partial<Record<QuestionTopic, string>> = {
+  "background-work": "background-worker", "file-uploads": "object-storage", "search-needed": "search",
+};
 
 /** Answer options for each question topic come from code, never from a model, so every draft offers the same choices. */
 export const TOPIC_OPTIONS: Record<QuestionTopic, { label: string; value: string | number }[]> = {

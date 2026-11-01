@@ -2,7 +2,7 @@ import { DesignDraft, draftJsonSchema } from "./draft";
 import type { Caller, DraftInput } from "./panel";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-const TIMEOUT_MS = 20_000;
+const TIMEOUT_MS = 30_000;
 let rules: string | undefined;
 const loadRules = async () => (rules ??= await Bun.file(new URL("./rules.md", import.meta.url)).text());
 
@@ -14,7 +14,9 @@ export function openRouterCaller(apiKey: string, fetchImpl: typeof fetch = fetch
   return async (model, input, signal) => {
     const messages: { role: string; content: string }[] = [{ role: "system", content: await loadRules() }, { role: "user", content: userMessage(input) }];
     let lastError = "";
-    let temperature: number | undefined = 0; // dropped if the model doesn't accept it (e.g. GPT-6.1 Sol)
+    // Low reasoning effort: GLM 5.3 answers in ~3 s instead of ~15 s on the same draft. Both settings are
+    // dropped on retry if no provider accepts them (GPT-6.1 Sol rejects temperature).
+    let tuning: { temperature?: number; reasoning?: { effort: string } } = { temperature: 0, reasoning: { effort: "low" } };
     for (let attempt = 0; attempt < 2; attempt++) {
       const res = await fetchImpl(ENDPOINT, {
         method: "POST",
@@ -22,16 +24,16 @@ export function openRouterCaller(apiKey: string, fetchImpl: typeof fetch = fetch
         headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json", "x-title": "SwitchYard" },
         body: JSON.stringify({
           model,
-          temperature,
+          ...tuning,
           max_tokens: 2000,
           messages,
           response_format: { type: "json_schema", json_schema: { name: "design_draft", strict: true, schema: draftJsonSchema } },
           provider: { require_parameters: true }, // only route to providers that honour the schema
         }),
       });
-      if (res.status === 404 && temperature !== undefined) {
-        // require_parameters found no provider: the model rejects `temperature`. Retry once without it.
-        temperature = undefined;
+      if (res.status === 404 && Object.keys(tuning).length) {
+        // require_parameters found no provider for these settings. Retry once without them.
+        tuning = {};
         attempt--;
         continue;
       }
