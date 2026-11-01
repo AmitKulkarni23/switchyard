@@ -37,6 +37,15 @@ export const MAPPING: Record<string, Mapping> = {
   "aws:dynamodb": { category: "nosql", label: "DynamoDB", sizing: "none", targets: none("No DynamoDB equivalent. Keep it or migrate to Postgres/Mongo.") },
   "aws:lambda": { category: "functions", label: "Lambda", sizing: "none", targets: none("Re-architect as a Railway service or function; not priced.") },
   "aws:cloudfront": { category: "cdn", label: "CloudFront", sizing: "none", targets: none("Keep CloudFront or use Railway's CDN caching; not priced.") },
+  // Design-path parts: sized directly from the design, priced on Railway as services.
+  "part:web-service": { category: "compute", label: "Web service", sizing: "none", targets: service("Railway service", "Billed on CPU and memory actually used.") },
+  "part:background-worker": { category: "compute", label: "Background worker", sizing: "none", targets: service("Railway service", "Always-on worker, billed on use.") },
+  "part:scheduled-job": { category: "compute", label: "Scheduled job", sizing: "none", targets: service("Railway cron service", "Runs on a cron schedule; billed only while it runs.") },
+  "part:relational-db": { category: "postgres", label: "Relational database", sizing: "none", targets: service("Railway Postgres", "Postgres service with a volume.") },
+  "part:key-value-store": { category: "redis", label: "Key-value store", sizing: "none", targets: service("Railway Redis", "Redis with persistence, or a Postgres table.") },
+  "part:queue": { category: "queue", label: "Queue", sizing: "none", targets: service("Railway Redis (as a queue)", "A small Redis service backing a job queue.") },
+  "part:object-storage": { category: "object-storage", label: "File storage", sizing: "none", targets: service("Railway bucket", "Free egress.") },
+  "part:cache": { category: "redis", label: "Cache", sizing: "none", targets: service("Railway Redis", "Redis service.") },
   "aws:route53": { category: "dns", label: "Route 53", sizing: "none", targets: none("Keep your DNS provider.") },
 };
 

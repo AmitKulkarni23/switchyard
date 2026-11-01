@@ -1,4 +1,5 @@
 import { pricers } from "./pricers";
+import { type AwsPriced, priceAws } from "./pricers/aws";
 import { Assumptions, Estimate, type Workload } from "./schema";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -25,4 +26,9 @@ export function compare(workload: Workload, assumptions: Partial<Assumptions> = 
     notPriced: workload.unparsed,
     excluded: workload.excluded,
   });
+}
+
+/** Railway vs AWS for one workload: a bill (AWS side is billed) or a design (both sides priced). */
+export function compareBoth(workload: Workload, assumptions: Partial<Assumptions> = {}): { railway: Estimate; aws: AwsPriced } {
+  return { railway: compare(workload, { ...assumptions, destination: "railway" }), aws: priceAws(workload) };
 }

@@ -1,4 +1,4 @@
-import type { FocusRow, Format, UnpricedLine } from "../schema";
+import type { FileFormat as Format, FocusRow, UnpricedLine } from "../schema";
 import { awsCurCsv } from "./aws-cur-csv";
 import { awsInvoicePdf } from "./aws-invoice-pdf";
 import { focusCsv } from "./focus-csv";

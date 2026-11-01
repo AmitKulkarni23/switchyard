@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { adapters } from "../backend/adapters";
 import { lookupInstance } from "../backend/data/catalog/aws-instances";
 import { normalize } from "../backend/normalize";
-import type { Format } from "../backend/schema";
+import type { FileFormat as Format } from "../backend/schema";
 import { TAX_TOTAL, USAGE_TOTAL } from "./fixtures/sample-bill";
 
 const load = async (format: Format, file: string) => {

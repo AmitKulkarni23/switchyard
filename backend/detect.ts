@@ -1,6 +1,6 @@
 import { normHeader, parseCsv } from "./adapters/csv";
 import { pdfLines } from "./adapters/pdf-text";
-import type { Format } from "./schema";
+import type { FileFormat as Format } from "./schema";
 
 export class UnsupportedFormatError extends Error {
   constructor(detail: string) {

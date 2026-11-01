@@ -1,0 +1,38 @@
+# AWS us-east-1 on-demand rates used for the right-sized AWS column.
+# NOT YET VERIFIED against the live pages: entered from AWS's public pricing for a local preview.
+# Verify each rate against its source before shipping (task: AWS pricer).
+destination: aws
+region: us-east-1
+fetched: unverified
+sources:
+  - https://aws.amazon.com/fargate/pricing/
+  - https://aws.amazon.com/lambda/pricing/
+  - https://aws.amazon.com/api-gateway/pricing/
+  - https://aws.amazon.com/rds/postgresql/pricing/
+  - https://aws.amazon.com/elasticache/pricing/
+  - https://aws.amazon.com/dynamodb/pricing/on-demand/
+  - https://aws.amazon.com/sqs/pricing/
+  - https://aws.amazon.com/s3/pricing/
+  - https://aws.amazon.com/vpc/pricing/
+  - https://aws.amazon.com/elasticloadbalancing/pricing/
+  - https://aws.amazon.com/ec2/pricing/on-demand/
+rates:
+  fargate_vcpu_hour: 0.04048
+  fargate_gb_hour: 0.004445
+  lambda_request_million: 0.20
+  lambda_gb_second: 0.0000166667
+  apigw_http_request_million: 1.00
+  alb_hour: 0.0225
+  alb_lcu_hour: 0.008
+  nat_hour: 0.045
+  nat_gb_processed: 0.045
+  egress_gb: 0.09
+  egress_free_gb: 100
+  rds_postgres_hour: { small: 0.032, medium: 0.065, large: 0.152 }   # db.t4g.small, db.t4g.medium, db.m6g.large
+  rds_storage_gb_month: 0.115
+  elasticache_hour: { small: 0.032, medium: 0.065, large: 0.149 }    # cache.t4g.small, cache.t4g.medium, cache.m6g.large
+  dynamodb_write_million: 0.625
+  dynamodb_read_million: 0.125
+  dynamodb_storage_gb_month: 0.25
+  sqs_request_million: 0.40
+  s3_storage_gb_month: 0.023

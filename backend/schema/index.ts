@@ -19,7 +19,10 @@ export const FocusRow = z.object({
 });
 export type FocusRow = z.infer<typeof FocusRow>;
 
-export const Format = z.enum(["aws-invoice-pdf", "aws-cur-csv", "focus-csv"]);
+export const FileFormat = z.enum(["aws-invoice-pdf", "aws-cur-csv", "focus-csv"]);
+export type FileFormat = z.infer<typeof FileFormat>;
+/** "design": a workload sketched from an idea, not read from a file. */
+export const Format = z.enum([...FileFormat.options, "design"]);
 export type Format = z.infer<typeof Format>;
 
 export const Outcome = z.enum(["service", "disappears", "none"]);
@@ -46,6 +49,7 @@ export const Component = z.object({
   currentMonthlyCost: z.number(),
   rowCount: z.number().int().positive(),
   warnings: z.array(z.string()).default([]),
+  drivers: z.record(z.string(), z.union([z.number(), z.string()])).default({}), // usage that drives cost (design parts)
 });
 export type Component = z.infer<typeof Component>;
 

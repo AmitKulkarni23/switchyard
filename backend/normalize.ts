@@ -90,6 +90,7 @@ export function normalize(input: { provider: string; format: Format; rows: Focus
       currentMonthlyCost: round2(cost / months),
       rowCount: g.rows.length,
       warnings,
+      drivers: {},
     });
   }
 
