@@ -92,7 +92,7 @@ function App() {
         ? `${failed.length ? `${failed.join(" and ")} didn't answer` : "GLM 5.3 and DeepSeek V4 disagreed"}${r.disputes.length && !failed.length ? ` (${r.disputes.join(", ")})` : ""}, so ${ok.join(", ")} voted.`
         : `Drafted by ${ok.join(" and ")}; they agreed.`;
       setState({ kind: "design", design: {
-        idea: idea.trim(), parts: r.parts, panelNote: panelNote + (r.cached ? " (Saved draft.)" : ""),
+        idea: idea.trim(), parts: r.parts, panelNote: panelNote + (r.cached ? " (Saved draft.)" : ""), guessed: r.assumed,
         questions: r.questions,
         assumptions: { ...r.assumptions, requestsPerDay: Math.round(r.assumptions.requestsPerDay), trafficShape: r.trafficShape },
       } });
@@ -105,7 +105,9 @@ function App() {
   function pick(starterId: string) {
     const s = STARTERS.find((x) => x.id === starterId)!;
     const n = (v: string, d: number) => (v.trim() === "" ? d : Math.max(0, Number(v) || 0));
-    setState({ kind: "design", design: { idea: idea.trim(), parts: s.parts.map((p) => ({ ...p })), assumptions: { ...DEFAULT_ASSUMPTIONS, requestsPerDay: n(nums.requestsPerDay, DEFAULT_ASSUMPTIONS.requestsPerDay), dataGb: n(nums.dataGb, DEFAULT_ASSUMPTIONS.dataGb) } } });
+    const typed = [nums.requestsPerDay.trim() && "requestsPerDay", nums.dataGb.trim() && "dataGb"].filter(Boolean) as string[];
+    const guessed = Object.keys(DEFAULT_ASSUMPTIONS).filter((k) => k !== "trafficShape" && !typed.includes(k));
+    setState({ kind: "design", design: { idea: idea.trim(), guessed, parts: s.parts.map((p) => ({ ...p })), assumptions: { ...DEFAULT_ASSUMPTIONS, requestsPerDay: n(nums.requestsPerDay, DEFAULT_ASSUMPTIONS.requestsPerDay), dataGb: n(nums.dataGb, DEFAULT_ASSUMPTIONS.dataGb) } } });
   }
 
   const reset = () => {

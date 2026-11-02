@@ -21,6 +21,8 @@ export type Design = {
   idea: string;
   questions?: { topic: import("./draft").QuestionTopic; text: string; answer?: string | number }[];
   panelNote?: string;
+  /** Number keys nobody has confirmed yet: guessed by the models or left at the default. */
+  guessed?: string[];
   parts: Part[];
   assumptions: {
     requestsPerDay: number; kbPerRequest: number; dataGb: number; filesGb: number; trafficShape: TrafficShape;
@@ -83,4 +85,16 @@ export function designToWorkload(d: Design): Workload {
     return { id: String(i + 1).padStart(2, "0"), key: `part:${p.type}`, category: p.type, label: PART_LABEL[p.type], sourceService: "Your design", detail: isSized(p.type) ? p.tier : "", size, currentMonthlyCost: external, rowCount: 1, warnings: [], drivers };
   });
   return Workload.parse({ provider: "design", format: "design", components, unparsed: [], excluded: [] });
+}
+
+export type NumberKey = "requestsPerDay" | "kbPerRequest" | "dataGb" | "filesGb" | "emailsPerDay" | "smsPerDay" | "concurrentConnections" | "monthlyActiveUsers";
+/** Which numbers matter for a design: only those its parts use. */
+export function relevantNumbers(parts: Part[]): NumberKey[] {
+  const on = new Set(parts.filter((p) => p.on).map((p) => p.type));
+  const keys: NumberKey[] = [];
+  if (on.has("web-service") || on.has("realtime") || on.has("cdn")) keys.push("requestsPerDay", "kbPerRequest");
+  if (on.has("relational-db") || on.has("search") || on.has("key-value-store")) keys.push("dataGb");
+  if (on.has("object-storage")) keys.push("filesGb");
+  for (const t of on) for (const k of PART_ASSUMPTIONS[t] ?? []) if (!keys.includes(k as NumberKey)) keys.push(k as NumberKey);
+  return keys;
 }

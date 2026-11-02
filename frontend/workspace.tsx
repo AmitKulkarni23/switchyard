@@ -4,7 +4,7 @@ import { compareBoth } from "../backend/compare";
 import { railwayPriceBook } from "../backend/data/price-books";
 import { awsPriceBook } from "../backend/pricers/aws";
 import { TOPIC_OPTIONS } from "../backend/design/draft";
-import { type Design, designToWorkload, isSized, PART_ASSUMPTIONS, PART_LABEL, PART_TYPES, type PartType, SHAPE_UTILIZATION, type Tier, type TrafficShape } from "../backend/design/parts";
+import { type Design, designToWorkload, isSized, type NumberKey, PART_LABEL, PART_TYPES, type PartType, relevantNumbers, SHAPE_UTILIZATION, type Tier, type TrafficShape } from "../backend/design/parts";
 import type { Workload } from "../backend/schema";
 import { Mark, Masthead } from "./results";
 import { condensed, figures, ink, label, muted, red, rule, wash } from "./theme";
@@ -27,6 +27,7 @@ export function Workspace(props: Props) {
   const workload = useMemo(() => (props.mode === "design" ? designToWorkload(props.design) : props.workload), [props]);
   const { railway, aws } = useMemo(() => compareBoth(workload, { utilization: { low: busy[0]! / 100, high: busy[1]! / 100 }, mustKeep }), [workload, busy, mustKeep]);
 
+  const guessCount = props.mode === "design" ? relevantNumbers(props.design.parts).filter((k) => props.design.guessed?.includes(k)).length : 0;
   const diff = { low: aws.total.low - railway.destinationTotal.high, high: aws.total.high - railway.destinationTotal.low };
   const cheaper = diff.low >= 0 ? "Railway" : diff.high <= 0 ? "AWS" : null;
   const source = props.mode === "design" ? `Your idea · ${workload.components.length} parts · illustrative, edit anything` : [props.fileName, props.sample && "sample bill (synthetic)", `${workload.components.length} parts from your bill`].filter(Boolean).join(" · ");
@@ -78,6 +79,11 @@ export function Workspace(props: Props) {
             <Cell head="Difference" value={cheaper ? range({ low: Math.abs(cheaper === "Railway" ? diff.low : diff.high), high: Math.abs(cheaper === "Railway" ? diff.high : diff.low) }) : `${usd(-diff.low)} more to ${usd(diff.high)} less`}
               note={cheaper ? `less per month on ${cheaper}` : "on Railway, depending on how busy you are"} accent={cheaper === "AWS" ? red : undefined} last />
           </Box>
+          {guessCount > 0 && (
+            <Typography role="status" sx={{ mt: 1, fontSize: 14, color: red, fontWeight: 600 }}>
+              Based on {guessCount} guessed number{guessCount > 1 ? "s" : ""}. Check them on the left; prices update as you change them.
+            </Typography>
+          )}
 
           <Typography component="h2" sx={{ ...condensed, fontSize: 18, mt: 4, mb: 1 }}>Part by part</Typography>
           <Box sx={{ overflowX: "auto" }}>
@@ -168,26 +174,70 @@ function Field({ label: l, children }: { label: string; children: ReactNode }) {
   return <Box sx={{ display: "grid", gap: 0.5 }}><Typography sx={{ ...label }}>{l}</Typography>{children}</Box>;
 }
 
-const EXTRA: ["emailsPerDay" | "smsPerDay" | "concurrentConnections" | "monthlyActiveUsers", string][] = [
-  ["emailsPerDay", "Emails a day"], ["smsPerDay", "Texts a day"], ["concurrentConnections", "Connected at once"], ["monthlyActiveUsers", "Monthly active users"],
-];
+/** Each number: its label, unit, and the steps its slider moves through (rough, roughly logarithmic). */
+const NUMBERS: Record<NumberKey, { label: string; unit: string; steps: number[] }> = {
+  requestsPerDay: { label: "Requests a day", unit: "", steps: [100, 1e3, 5e3, 1e4, 5e4, 1e5, 2.5e5, 5e5, 1e6, 2.5e6, 5e6, 1e7] },
+  kbPerRequest: { label: "Response size", unit: "KB", steps: [1, 2, 5, 10, 20, 50, 100, 200, 500] },
+  dataGb: { label: "Database size", unit: "GB", steps: [0.1, 0.5, 1, 2, 5, 10, 20, 50, 100, 250, 500, 1000] },
+  filesGb: { label: "Stored files", unit: "GB", steps: [0, 1, 5, 10, 20, 50, 100, 250, 500, 1000, 2500, 5000] },
+  emailsPerDay: { label: "Emails a day", unit: "", steps: [0, 10, 50, 100, 500, 1e3, 5e3, 1e4, 5e4, 1e5] },
+  smsPerDay: { label: "Texts a day", unit: "", steps: [0, 10, 50, 100, 500, 1e3, 5e3, 1e4, 5e4, 1e5] },
+  concurrentConnections: { label: "Connected at once", unit: "", steps: [0, 10, 50, 100, 500, 1e3, 5e3, 1e4, 5e4] },
+  monthlyActiveUsers: { label: "Monthly active users", unit: "", steps: [0, 100, 500, 1e3, 5e3, 1e4, 5e4, 1e5, 5e5, 1e6] },
+};
+const nearest = (steps: number[], v: number) => steps.reduce((best, s, i) => (Math.abs(Math.log1p(s) - Math.log1p(v)) < Math.abs(Math.log1p(steps[best]!) - Math.log1p(v)) ? i : best), 0);
+const compact = (n: number) => n.toLocaleString("en-US", { notation: n >= 10_000 ? "compact" : "standard", maximumFractionDigits: 1 });
+
+/** Guessed numbers first, flagged, each with a slider over sensible steps and an exact field. Any edit confirms it. */
+function NumbersBlock({ design, setDesign }: { design: Design; setDesign: (d: Design) => void }) {
+  const keys = relevantNumbers(design.parts);
+  const guessed = keys.filter((k) => design.guessed?.includes(k));
+  const ordered = [...guessed, ...keys.filter((k) => !guessed.includes(k))];
+  const set = (k: NumberKey, v: number) => setDesign({ ...design, assumptions: { ...design.assumptions, [k]: Math.max(0, v) }, guessed: (design.guessed ?? []).filter((g) => g !== k) });
+  if (!keys.length) return null;
+  return (
+    <Box component="section" aria-labelledby="numbers" sx={{ mt: 2.5, p: 2, bgcolor: "#fff", border: `${guessed.length ? 2 : 1}px solid ${guessed.length ? red : rule}` }}>
+      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+        <Typography id="numbers" sx={{ ...label, color: guessed.length ? red : ink }}>{guessed.length ? `We guessed ${guessed.length} number${guessed.length > 1 ? "s" : ""}. Check them` : "Your numbers"}</Typography>
+        {guessed.length > 0 && <Button variant="text" onClick={() => setDesign({ ...design, guessed: (design.guessed ?? []).filter((g) => !keys.includes(g as NumberKey)) })} sx={{ p: 0, minWidth: 0, color: ink, textDecoration: "underline", textUnderlineOffset: 3 }}>These look right</Button>}
+      </Box>
+      <Box sx={{ display: "grid", gap: 1.5, mt: 1.5 }}>
+        {ordered.map((k) => {
+          const n = NUMBERS[k], v = design.assumptions[k], isGuess = guessed.includes(k);
+          return (
+            <Box key={k} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "150px 1fr 110px" }, alignItems: "center", columnGap: 2 }}>
+              <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+                {n.label}{isGuess && <Typography component="span" sx={{ ml: 1, fontSize: 11, fontWeight: 700, color: red, textTransform: "uppercase", letterSpacing: ".06em" }}>guessed</Typography>}
+              </Typography>
+              <Slider value={nearest(n.steps, v)} min={0} max={n.steps.length - 1} step={1} marks onChange={(_, i) => set(k, n.steps[i as number]!)}
+                getAriaValueText={(i) => `${compact(n.steps[i]!)} ${n.unit}`} slotProps={{ input: { "aria-label": n.label } }}
+                sx={{ color: isGuess ? red : ink, "& .MuiSlider-thumb": { width: 14, height: 14, borderRadius: 0 }, "& .MuiSlider-mark": { height: 6, width: 1 } }} />
+              <TextField size="small" type="number" value={v} onChange={(e) => set(k, Number(e.target.value) || 0)}
+                slotProps={{ htmlInput: { min: 0, "aria-label": `${n.label} exact` }, input: { endAdornment: n.unit ? <Typography sx={{ fontSize: 13, color: muted, ml: 0.5 }}>{n.unit}</Typography> : undefined } }} />
+            </Box>
+          );
+        })}
+      </Box>
+    </Box>
+  );
+}
 const SHAPES: [TrafficShape, string][] = [["steady", "Steady"], ["business-hours", "Business hours"], ["spiky", "Spiky"], ["mostly-idle", "Mostly idle"]];
 
 function DesignPanel({ design, setDesign }: { design: Design; setDesign: (d: Design) => void }) {
   const a = design.assumptions;
   const setA = (patch: Partial<Design["assumptions"]>) => setDesign({ ...design, assumptions: { ...a, ...patch } });
   const setPart = (i: number, patch: Partial<Design["parts"][number]>) => setDesign({ ...design, parts: design.parts.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
-  const num = (v: string) => Math.max(0, Number(v) || 0);
 
   const answer = (qi: number, value: string | number) => {
     const q = design.questions![qi]!;
     let next: Design = { ...design, questions: design.questions!.map((x, j) => (j === qi ? { ...x, answer: value } : x)) };
     const a2 = { ...next.assumptions };
-    if (q.topic === "traffic-volume") a2.requestsPerDay = Number(value);
+    const confirm = (k: string) => (next = { ...next, guessed: (next.guessed ?? []).filter((g) => g !== k) });
+    if (q.topic === "traffic-volume") a2.requestsPerDay = Number(value), confirm("requestsPerDay");
     if (q.topic === "traffic-shape") a2.trafficShape = value as TrafficShape;
-    if (q.topic === "data-size") a2.dataGb = Number(value);
-    if (q.topic === "active-users") a2.monthlyActiveUsers = Number(value);
-    if (q.topic === "messaging-volume") a2.emailsPerDay = Number(value);
+    if (q.topic === "data-size") a2.dataGb = Number(value), confirm("dataGb");
+    if (q.topic === "active-users") a2.monthlyActiveUsers = Number(value), confirm("monthlyActiveUsers");
+    if (q.topic === "messaging-volume") a2.emailsPerDay = Number(value), confirm("emailsPerDay");
     const ensure = (types: PartType[], on: boolean) => {
       let parts = next.parts.map((p) => (types.includes(p.type) ? { ...p, on } : p));
       if (on) for (const t of types) if (!parts.some((p) => p.type === t)) parts = [...parts, { type: t, tier: "small" as Tier, why: "you said yes", on: true }];
@@ -223,16 +273,9 @@ function DesignPanel({ design, setDesign }: { design: Design; setDesign: (d: Des
             {SHAPES.map(([v, t]) => <ToggleButton key={v} value={v}>{t}</ToggleButton>)}
           </ToggleButtonGroup>
         </Field>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-          <Field label="Requests a day"><TextField size="small" type="number" value={a.requestsPerDay} onChange={(e) => setA({ requestsPerDay: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, step: 1000, "aria-label": "Requests a day" } }} /></Field>
-          <Field label="KB per response"><TextField size="small" type="number" value={a.kbPerRequest} onChange={(e) => setA({ kbPerRequest: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, "aria-label": "KB per response" } }} /></Field>
-          <Field label="Database GB"><TextField size="small" type="number" value={a.dataGb} onChange={(e) => setA({ dataGb: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, "aria-label": "Database GB" } }} /></Field>
-          <Field label="Stored files GB"><TextField size="small" type="number" value={a.filesGb} onChange={(e) => setA({ filesGb: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, "aria-label": "Stored files GB" } }} /></Field>
-          {EXTRA.filter(([k]) => design.parts.some((p) => p.on && PART_ASSUMPTIONS[p.type]?.includes(k))).map(([k, l]) => (
-            <Field key={k} label={l}><TextField size="small" type="number" value={a[k]} onChange={(e) => setA({ [k]: num(e.target.value) })} sx={{ bgcolor: "#fff" }} slotProps={{ htmlInput: { min: 0, "aria-label": l } }} /></Field>
-          ))}
-        </Box>
       </Box>
+
+      <NumbersBlock design={design} setDesign={setDesign} />
 
       <Typography component="h3" sx={{ ...condensed, fontSize: 16, mt: 3, mb: 0.5 }}>Parts</Typography>
       <Box sx={{ borderTop: `2px solid ${ink}` }}>

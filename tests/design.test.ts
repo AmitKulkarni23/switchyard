@@ -146,3 +146,10 @@ test("questions the design already answers are dropped; wording comes from code"
   expect(m.questions.map((q) => q.topic)).toEqual(["data-size", "traffic-volume"]);
   expect(new Set(m.questions.map((q) => q.text)).size).toBe(2);
 });
+
+test("only numbers the design's parts use are shown", async () => {
+  const { relevantNumbers } = await import("../backend/design/parts");
+  const p = (type: any, on = true) => ({ type, tier: "small" as const, why: "", on });
+  expect(relevantNumbers([p("web-service"), p("relational-db")])).toEqual(["requestsPerDay", "kbPerRequest", "dataGb"]);
+  expect(relevantNumbers([p("web-service"), p("messaging"), p("auth"), p("object-storage", false)])).toEqual(["requestsPerDay", "kbPerRequest", "emailsPerDay", "smsPerDay", "monthlyActiveUsers"]);
+});
