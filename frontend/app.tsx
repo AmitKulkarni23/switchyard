@@ -175,12 +175,8 @@ function App() {
 
         <Box component="section" aria-labelledby="drop" onDragOver={(e) => (e.preventDefault(), setOver(true))} onDragLeave={() => setOver(false)} onDrop={drop}
           sx={{ mt: 6, borderTop: `1px solid ${ink}`, pt: 2.5, bgcolor: over ? "#FBE9EC" : "transparent", outline: over ? `2px dashed ${red}` : "none", outlineOffset: 6 }}>
-          <Typography id="drop" component="h2" sx={{ fontWeight: 700, fontSize: { xs: 18, md: 22 } }}>Already running something? Drop a file</Typography>
-          <Box component="ul" sx={{ m: 0, mt: 1, pl: 2.5, color: muted, display: "grid", gap: 0.5 }}>
-            <li>An AWS bill: invoice PDF, Cost and Usage Report CSV, or FOCUS export</li>
-            <li>A CloudFormation template (YAML or JSON) <em>· coming next</em></li>
-            <li>Railway exports: <code>railway config pull --json</code> and <code>railway usage projects --project &lt;name&gt; --json</code> <em>· coming next</em></li>
-          </Box>
+          <Typography id="drop" component="h2" sx={{ fontWeight: 700, fontSize: { xs: 18, md: 22 } }}>Already on AWS? Drop your bill</Typography>
+          <Typography sx={{ mt: 1, color: muted }}>An invoice PDF, a Cost and Usage Report CSV, or a FOCUS export.</Typography>
           {state.busy ? (
             <Box role="status" sx={{ mt: 2, maxWidth: 520 }}><Typography sx={{ fontWeight: 700 }}>Reading {state.busy}…</Typography><LinearProgress sx={{ mt: 1 }} /></Box>
           ) : (
@@ -191,7 +187,7 @@ function App() {
           )}
           {state.error && <Typography role="alert" sx={{ mt: 2, color: red, fontWeight: 600, maxWidth: "70ch" }}>{state.error}</Typography>}
           <Typography sx={{ mt: 2, fontSize: 14 }}><strong>Files never go to an LLM.</strong> Bills are deleted right after parsing; only the derived numbers are kept.</Typography>
-          <input ref={input} type="file" hidden accept=".pdf,.csv,.json,.yaml,.yml,application/pdf,text/csv,application/json" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f); }} />
+          <input ref={input} type="file" hidden accept=".pdf,.csv,application/pdf,text/csv" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f); }} />
         </Box>
       </Box>
     </>
