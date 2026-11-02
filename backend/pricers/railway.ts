@@ -4,6 +4,9 @@ import type { Assumptions, Component, EstimateLine, Range, Workload } from "../s
 
 /** Memory doesn't idle to zero like CPU: it sits at a floor and rises with load. */
 export const MEMORY_FLOOR = 0.3;
+/** A database service never idles below this on Railway (ponytail: rough idle Postgres/Redis footprint; measure and refine). */
+const DB_MIN_MEMORY_GB = 0.25;
+const DATABASES = new Set(["postgres", "mysql", "redis", "mongo"]);
 const memoryShare = (u: number) => MEMORY_FLOOR + (1 - MEMORY_FLOOR) * u;
 
 const usd = (n: number) => `$${+n.toFixed(n < 1 ? 3 : 2)}`;
@@ -17,7 +20,7 @@ export type Priced = {
 };
 
 function usageCost(c: Component, u: number, r: PriceBook["rates"]) {
-  const s = c.size;
+  const s = DATABASES.has(c.category) ? { ...c.size, memoryGb: Math.max(c.size.memoryGb, DB_MIN_MEMORY_GB) } : c.size;
   return s.vcpu * r.vcpu_month * u + s.memoryGb * r.memory_gb_month * memoryShare(u) + s.storageGb * r.volume_gb_month + s.objectStorageGb * r.object_storage_gb_month + s.egressGb * r.egress_gb;
 }
 

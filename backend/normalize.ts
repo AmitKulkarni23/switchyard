@@ -31,10 +31,13 @@ export function normalize(input: { provider: string; format: Format; rows: Focus
     const usage = `${r.x_UsageType ?? ""} ${r.ChargeDescription}`;
     const key = classify(code, usage, r.x_DatabaseEngine);
     if (!key) {
+      if (r.BilledCost === 0) continue; // a $0 line we can't map changes nothing on either side
       unparsed.push({ description: r.ChargeDescription || r.ServiceName, service: r.ServiceName, cost: r.BilledCost, reason: `no mapping for ${r.ServiceName}` });
       continue;
     }
     const sizing = MAPPING[key]!.sizing;
+    // ponytail: $0 lines with nothing to size (free tier, $0 placeholders) are noise; sized ones (free-tier instances, egress) are kept.
+    if (r.BilledCost === 0 && sizing === "none") continue;
     const instanceType = sizing === "instance" ? (r.x_InstanceType || findInstanceType(usage)) : undefined;
     // EC2 groups by instance type; databases by resource (instance + storage lines merge); everything else by key.
     const sub = key === "aws:ec2:instance" ? instanceType : sizing === "instance" ? (r.ResourceId ?? "") : "";
@@ -55,16 +58,18 @@ export function normalize(input: { provider: string; format: Format; rows: Focus
 
     if (m.sizing === "instance") {
       const hourRows = g.rows.filter((r) => isHours(r.ConsumedUnit) && (r.x_InstanceType || findInstanceType(`${r.x_UsageType ?? ""} ${r.ChargeDescription}`)));
-      const spec = g.instanceType ? lookupInstance(g.instanceType) : undefined;
+      const acuHours = g.rows.filter((r) => /ACU-?H/i.test(r.ConsumedUnit ?? "")).reduce((s, r) => s + (r.ConsumedQuantity ?? 0), 0);
+      // Aurora Serverless v2: 1 ACU ≈ 2 GiB memory with proportional CPU (ponytail: 0.25 vCPU per ACU, refine from AWS docs).
+      const spec = g.instanceType ? lookupInstance(g.instanceType) : acuHours > 0 ? { vcpu: 0.25, memoryGb: 2, acu: true } : undefined;
       if (!spec) {
         unparsed.push({ description: `${m.label}${g.instanceType ? ` (${g.instanceType})` : ""}`, service: g.rows[0]!.ServiceName, cost: round2(cost / months), reason: g.instanceType ? `instance type ${g.instanceType} not in catalog` : "instance type not found on bill" });
         continue;
       }
-      const count = hourRows.reduce((s, r) => s + (r.ConsumedQuantity ?? 0), 0) / periodHours;
+      const count = ("acu" in spec ? acuHours : hourRows.reduce((s, r) => s + (r.ConsumedQuantity ?? 0), 0)) / periodHours;
       size.vcpu = count * spec.vcpu;
       size.memoryGb = count * spec.memoryGb;
       size.storageGb = g.rows.filter((r) => /GB-?Mo/i.test(r.ConsumedUnit ?? "")).reduce((s, r) => s + (r.ConsumedQuantity ?? 0), 0) / months;
-      detail = `${+count.toFixed(2)} × ${g.instanceType} (${+size.vcpu.toFixed(2)} vCPU / ${+size.memoryGb.toFixed(2)} GB)` + (size.storageGb ? `, ${+size.storageGb.toFixed(1)} GB storage` : "");
+      detail = `${+count.toFixed(2)} × ${"acu" in spec ? "Aurora Serverless ACU" : g.instanceType} (${+size.vcpu.toFixed(2)} vCPU / ${+size.memoryGb.toFixed(2)} GB)` + (size.storageGb ? `, ${+size.storageGb.toFixed(1)} GB storage` : "");
     } else if (m.sizing === "fargate") {
       for (const r of g.rows) {
         const hours = (r.ConsumedQuantity ?? 0) / periodHours;

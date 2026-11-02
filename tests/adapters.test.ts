@@ -21,6 +21,7 @@ for (const [format, file] of [["focus-csv", "focus.csv"], ["aws-cur-csv", "aws-c
 
 test("pdf keeps every charge line", async () => {
   const { rows } = await adapters["aws-invoice-pdf"](await fixture("aws-invoice.pdf"));
-  expect(rows.length).toBe(SAMPLE_LINES.length);
+  expect(rows.length).toBe(SAMPLE_LINES.length + 1); // + the promotional credit
+  expect(rows.find((r) => r.ChargeCategory === "Credit")?.BilledCost).toBe(-5);
   expect(rows.find((r) => r.ServiceName === "AWS Support (Business)")?.ConsumedQuantity).toBeUndefined();
 });

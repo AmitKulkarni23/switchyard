@@ -19,7 +19,7 @@ for (const [format, file] of [["focus-csv", "focus.csv"], ["aws-cur-csv", "aws-c
     // every dollar is accounted for: components + not priced + excluded
     const total = w.components.reduce((s, c) => s + c.currentMonthlyCost, 0) + w.unparsed.reduce((s, u) => s + u.cost, 0);
     expect(r2(total)).toBe(USAGE_TOTAL);
-    expect(r2(w.excluded.reduce((s, u) => s + u.cost, 0))).toBe(TAX_TOTAL);
+    expect(r2(w.excluded.filter((u) => u.reason === "tax").reduce((s, u) => s + u.cost, 0))).toBe(TAX_TOTAL);
 
     const m5 = by("aws:ec2:instance").find((c) => c.detail.includes("m5.xlarge"))!;
     expect(m5.size).toMatchObject({ vcpu: 12, memoryGb: 48 });
@@ -51,4 +51,20 @@ test("OpenSearch lines on a bill are recognised and sized", async () => {
   expect(classify("AmazonES", "USE1-ESInstance:m6g.large.search $0.128 per m6g.large.search instance hour")).toBe("aws:opensearch");
   expect(findInstanceType("ESInstance:m6g.large.search")).toBe("m6g.large.search");
   expect(lookupInstance("m6g.large.search")).toEqual({ vcpu: 2, memoryGb: 8 });
+});
+
+test("real-bill naming: ECR isn't EC2; Aurora Serverless is sized from ACU-hours; $0 noise is skipped", async () => {
+  const { serviceCode } = await import("../backend/data/mapping");
+  expect(serviceCode("EC2 Container Registry (ECR)")).toBe("AmazonECR");
+  expect(serviceCode("API Gateway")).toBe("AmazonApiGateway");
+  const { FocusRow } = await import("../backend/schema");
+  const row = (o: object) => FocusRow.parse({ ProviderName: "AWS", ChargeCategory: "Usage", ChargePeriodStart: "2026-08-01T00:00:00Z", ChargePeriodEnd: "2026-09-01T00:00:00Z", ...o });
+  const w = normalize({ provider: "AWS", format: "aws-invoice-pdf", unparsed: [], rows: [
+    row({ ServiceName: "Relational Database Service", x_UsageType: "Amazon Relational Database Service for Aurora PostgreSQL", ChargeDescription: "USD 0.12 per Aurora Capacity Unit hour running Aurora PostgreSQL Serverless v2", ConsumedQuantity: 744, ConsumedUnit: "ACU-Hr", BilledCost: 89.28 }),
+    row({ ServiceName: "Budgets", ChargeDescription: "$0.00 per Action-enabled Budget-day", BilledCost: 0 }),
+    row({ ServiceName: "CloudWatch", ChargeDescription: "$0.00 per metric", BilledCost: 0 }),
+  ] });
+  expect(w.components).toHaveLength(1);
+  expect(w.components[0]).toMatchObject({ key: "aws:rds:postgres", size: { vcpu: 0.25, memoryGb: 2 } }); // 1 ACU on average
+  expect(w.unparsed).toEqual([]);
 });

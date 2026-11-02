@@ -28,6 +28,7 @@ export const MAPPING: Record<string, Mapping> = {
   "aws:vpc:nat-gateway": { category: "network-overhead", label: "NAT gateway", sizing: "none", targets: disappears("Railway has no NAT gateway charge.") },
   "aws:vpc:public-ip": { category: "network-overhead", label: "Public IPv4 addresses", sizing: "none", targets: disappears("Railway domains carry no per-IP charge.") },
   "aws:elb": { category: "network-overhead", label: "Load balancers", sizing: "none", targets: disappears("Railway's edge proxy routes traffic at no extra charge.") },
+  "aws:apigateway": { category: "network-overhead", label: "API Gateway", sizing: "none", targets: disappears("Railway routes HTTP straight to your service; no per-request gateway charge.") },
   "aws:cloudwatch": { category: "observability", label: "CloudWatch", sizing: "none", targets: disappears("Railway includes logs and metrics.") },
   "aws:secrets": { category: "platform-overhead", label: "Secrets Manager / KMS", sizing: "none", targets: disappears("Railway has sealed variables.") },
   "aws:ecr": { category: "platform-overhead", label: "ECR", sizing: "none", targets: disappears("Railway builds and stores images; builds are free.") },
@@ -61,6 +62,8 @@ export const MAPPING: Record<string, Mapping> = {
 
 // Invoice PDFs carry only service names; CSVs carry product codes.
 const NAME_TO_CODE: [RegExp, string][] = [
+  [/Container Registry|^ECR/i, "AmazonECR"], // before EC2: "EC2 Container Registry (ECR)"
+  [/API Gateway/i, "AmazonApiGateway"],
   [/Elastic Compute Cloud|^EC2/i, "AmazonEC2"], [/Relational Database/i, "AmazonRDS"], [/ElastiCache/i, "AmazonElastiCache"],
   [/Simple Storage Service|^S3/i, "AmazonS3"], [/Load Balancing/i, "AWSELB"], [/Data Transfer/i, "AWSDataTransfer"],
   [/Simple Queue/i, "AWSQueueService"], [/DynamoDB/i, "AmazonDynamoDB"], [/Simple Notification/i, "AmazonSNS"],
@@ -99,6 +102,7 @@ export function classify(code: string, usage: string, engine = ""): string | und
       if (/Requests|requests/.test(t)) return "aws:s3:requests";
       return undefined;
     case "AWSELB": return "aws:elb";
+    case "AmazonApiGateway": return "aws:apigateway";
     case "AmazonCloudWatch": return "aws:cloudwatch";
     case "AWSSecretsManager": case "awskms": return "aws:secrets";
     case "AmazonECR": return "aws:ecr";
