@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode, useMemo, useState } from "react";
+import type React from "react";
 import { Box, Button, Checkbox, MenuItem, Select, Slider, Table, TableBody, TableCell, TableHead, TableRow, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { compareBoth } from "../backend/compare";
 import { railwayPriceBook } from "../backend/data/price-books";
@@ -7,7 +8,7 @@ import { TOPIC_OPTIONS } from "../backend/design/draft";
 import { type Design, designToWorkload, isSized, type NumberKey, PART_LABEL, PART_TYPES, type PartType, relevantNumbers, SHAPE_UTILIZATION, type Tier, type TrafficShape } from "../backend/design/parts";
 import type { Workload } from "../backend/schema";
 import { Mark, Masthead } from "./results";
-import { condensed, figures, ink, label, muted, red, rule, wash } from "./theme";
+import { condensed, figures, green, ink, label, muted, red, rule, wash } from "./theme";
 
 const usd = (n: number) => (n > 0 && n < 1 ? "<$1" : `$${Math.round(Math.abs(n)).toLocaleString("en-US")}`);
 const range = (r: { low: number; high: number }) => (Math.round(r.low) === Math.round(r.high) ? usd(r.low) : `${usd(r.low)} – ${usd(r.high)}`);
@@ -77,7 +78,7 @@ export function Workspace(props: Props) {
             <Cell head="On Railway" value={range(railway.destinationTotal)} note={`per month · ${railway.plan.name === "None" ? "nothing moves" : `${railway.plan.name} plan`} · at ${pctRange(busy)} busy`} />
             <Cell head={aws.billed ? "AWS today (billed)" : "On AWS"} value={range(aws.total)} note={aws.billed ? "per month, priced lines only" : "per month · right-sized, us-east-1"} />
             <Cell head="Difference" value={cheaper ? range({ low: Math.abs(cheaper === "Railway" ? diff.low : diff.high), high: Math.abs(cheaper === "Railway" ? diff.high : diff.low) }) : `${usd(-diff.low)} more to ${usd(diff.high)} less`}
-              note={cheaper ? `less per month on ${cheaper}` : "on Railway, depending on how busy you are"} accent={cheaper === "AWS" ? red : undefined} last />
+              note={cheaper ? `less per month on ${cheaper}` : "on Railway, depending on how busy you are"} accent={cheaper === "AWS" ? red : cheaper === "Railway" ? green : undefined} last />
           </Box>
           {guessCount > 0 && (
             <Typography role="status" sx={{ mt: 1, fontSize: 14, color: red, fontWeight: 600 }}>
@@ -92,9 +93,9 @@ export function Workspace(props: Props) {
                 <TableRow>
                   <TableCell>Part</TableCell>
                   <TableCell>Railway uses</TableCell>
-                  <TableCell align="right">Railway /mo</TableCell>
+                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>Railway /mo</TableCell>
                   <TableCell>AWS {aws.billed ? "today" : "uses"}</TableCell>
-                  <TableCell align="right">AWS /mo</TableCell>
+                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>AWS /mo</TableCell>
                   {props.mode === "bill" && <TableCell align="center" className="no-print">Must keep</TableCell>}
                 </TableRow>
               </TableHead>
@@ -102,7 +103,7 @@ export function Workspace(props: Props) {
                 {railway.lines.map((l) => {
                   const a = aws.lines.find((x) => x.componentId === l.componentId);
                   const isOpen = open === l.componentId;
-                  const rw = l.outcome === "disappears" ? "not needed" : l.outcome === "no-equivalent" || l.outcome === "kept" ? "stays on AWS" : l.notes.split(".")[0];
+                  const rw = l.outcome === "disappears" ? "not needed" : l.outcome === "kept" || (l.outcome === "no-equivalent" && aws.billed) ? "stays on AWS" : l.notes.split(".")[0];
                   return (
                     <Fragment key={l.componentId}>
                       <TableRow hover onClick={() => setOpen(isOpen ? null : l.componentId)} aria-expanded={isOpen}
@@ -136,7 +137,7 @@ export function Workspace(props: Props) {
                     <TableCell><Box sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 600 }}><Mark outcome="disappears" />{o.label}</Box></TableCell>
                     <TableCell sx={{ color: muted }}>not needed</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700, color: red }}>$0</TableCell>
-                    <TableCell sx={{ color: muted }}>{o.formula}</TableCell>
+                    <TableCell sx={{ color: muted }}>{o.uses}<Typography component="span" sx={{ display: "block", fontSize: 13 }}>{o.formula}</Typography></TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>{range(o.cost)}</TableCell>
                   </TableRow>
                 ))}
@@ -205,15 +206,19 @@ function NumbersBlock({ design, setDesign }: { design: Design; setDesign: (d: De
         {ordered.map((k) => {
           const n = NUMBERS[k], v = design.assumptions[k], isGuess = guessed.includes(k);
           return (
-            <Box key={k} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "150px 1fr 110px" }, alignItems: "center", columnGap: 2 }}>
-              <Typography sx={{ fontWeight: 600, fontSize: 14 }}>
+            <Box key={k} sx={{ display: "grid", gap: 0.5 }}>
+              <Typography component="label" htmlFor={`n-${k}`} sx={{ fontWeight: 600, fontSize: 14 }}>
                 {n.label}{isGuess && <Typography component="span" sx={{ ml: 1, fontSize: 11, fontWeight: 700, color: red, textTransform: "uppercase", letterSpacing: ".06em" }}>guessed</Typography>}
               </Typography>
-              <Slider value={nearest(n.steps, v)} min={0} max={n.steps.length - 1} step={1} marks onChange={(_, i) => set(k, n.steps[i as number]!)}
-                getAriaValueText={(i) => `${compact(n.steps[i]!)} ${n.unit}`} slotProps={{ input: { "aria-label": n.label } }}
-                sx={{ color: isGuess ? red : ink, "& .MuiSlider-thumb": { width: 14, height: 14, borderRadius: 0 }, "& .MuiSlider-mark": { height: 6, width: 1 } }} />
-              <TextField size="small" type="number" value={v} onChange={(e) => set(k, Number(e.target.value) || 0)}
-                slotProps={{ htmlInput: { min: 0, "aria-label": `${n.label} exact` }, input: { endAdornment: n.unit ? <Typography sx={{ fontSize: 13, color: muted, ml: 0.5 }}>{n.unit}</Typography> : undefined } }} />
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 120px", alignItems: "center", gap: 2 }}>
+                {/* native range: steps are indices into a rough log scale */}
+                <Box component="input" id={`n-${k}`} type="range" min={0} max={n.steps.length - 1} step={1} value={nearest(n.steps, v)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => set(k, n.steps[Number(e.target.value)]!)}
+                  aria-valuetext={`${compact(v)} ${n.unit}`.trim()}
+                  sx={{ width: "100%", m: 0, accentColor: isGuess ? red : ink, cursor: "pointer" }} />
+                <TextField size="small" type="number" value={v} onChange={(e) => set(k, Number(e.target.value) || 0)}
+                  slotProps={{ htmlInput: { min: 0, "aria-label": `${n.label}, exact${n.unit ? ` in ${n.unit}` : ""}` }, input: { endAdornment: n.unit ? <Typography sx={{ fontSize: 13, color: muted, ml: 0.5 }}>{n.unit}</Typography> : undefined } }} />
+              </Box>
             </Box>
           );
         })}
@@ -269,7 +274,7 @@ function DesignPanel({ design, setDesign }: { design: Design; setDesign: (d: Des
 
       <Box sx={{ mt: 2.5, display: "grid", gap: 2 }}>
         <Field label="When is traffic busiest?">
-          <ToggleButtonGroup size="small" exclusive value={a.trafficShape} onChange={(_, v) => v && setA({ trafficShape: v })} sx={{ bgcolor: "#fff", flexWrap: "wrap" }}>
+          <ToggleButtonGroup size="small" exclusive value={a.trafficShape} onChange={(_, v) => v && setA({ trafficShape: v })} sx={{ bgcolor: "#fff", flexWrap: "wrap", width: "fit-content" }}>
             {SHAPES.map(([v, t]) => <ToggleButton key={v} value={v}>{t}</ToggleButton>)}
           </ToggleButtonGroup>
         </Field>

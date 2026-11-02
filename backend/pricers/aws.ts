@@ -24,7 +24,7 @@ export type AwsLine = { componentId?: string; label: string; uses: string; cost:
 export type AwsPriced = { billed: boolean; lines: AwsLine[]; overhead: AwsLine[]; total: Range };
 
 const HOURS = 730;
-const usd = (n: number) => `$${n < 10 ? n.toFixed(2) : Math.round(n).toLocaleString("en-US")}`;
+const usd = (n: number) => `$${n < 1 ? +n.toFixed(4) : n < 10 ? n.toFixed(2) : Math.round(n).toLocaleString("en-US")}`;
 const one = (n: number): Range => ({ low: n, high: n });
 const RDS_CLASS = { small: "db.t4g.small", medium: "db.t4g.medium", large: "db.m6g.large" } as const;
 const CACHE_CLASS = { small: "cache.t4g.small", medium: "cache.t4g.medium", large: "cache.m6g.large" } as const;
@@ -138,7 +138,7 @@ export function priceAws(w: Workload, r = awsPriceBook.rates): AwsPriced {
     }
   }
   const overhead: AwsLine[] = [];
-  if (inVpc && compute) overhead.push({ label: "NAT gateway", uses: "VPC NAT gateway", cost: one(r.nat_hour * HOURS), formula: `${HOURS} h × ${usd(r.nat_hour)}: private subnets need it to reach the internet` });
+  if (inVpc && compute) overhead.push({ label: "NAT gateway", uses: "VPC NAT gateway", cost: one(r.nat_hour * HOURS), formula: `${HOURS} h × ${usd(r.nat_hour)}/h, so private subnets can reach the internet` });
   const total = [...lines, ...overhead].reduce((s, l) => s + l.cost.low, 0);
   return { billed: false, lines, overhead, total: one(total) };
 }

@@ -5,6 +5,7 @@ export const red = "#C8102E";
 export const rule = "#D9D6CF";
 export const muted = "#4A4A4A"; // 8.9:1 on white
 export const wash = "#F4F3F0"; // the verdict cell and expanded rows
+export const green = "#17713A"; // savings on Railway; 6.1:1 on white
 
 export const font = "'Archivo Variable', system-ui, sans-serif";
 /** Condensed Archivo for headers: rank comes from width and weight, not size. */
