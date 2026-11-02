@@ -19,14 +19,14 @@ const fake = (answers: Record<string, DesignDraft | Error>): { call: Caller; cal
   return { calls, call: async (model) => { calls.push(model); const a = answers[model]!; if (a instanceof Error) throw a; return a; } };
 };
 
-test("free text and close numbers don't count as disagreement", () => {
-  const b = draft({ parts: draft().parts.map((p) => ({ ...p, why: "different words" })), assumptions: { ...draft().assumptions, requestsPerDay: n(150000), kbPerRequest: n(40), dataGb: n(3), filesGb: n(0.2) } });
+test("free text and numbers never count as disagreement", () => {
+  const b = draft({ parts: draft().parts.map((p) => ({ ...p, why: "different words" })), assumptions: { ...draft().assumptions, requestsPerDay: n(900000), kbPerRequest: n(5), dataGb: n(300), filesGb: n(0.2) } });
   expect(compareDrafts(draft(), b)).toEqual({ agree: true, disputes: [] });
 });
 
 test("material differences are disputes", () => {
-  const b = draft({ parts: [...draft().parts, { type: "queue", tier: "small", why: "async" }], trafficShape: "steady", assumptions: { ...draft().assumptions, dataGb: n(50) } });
-  expect(compareDrafts(draft(), b).disputes).toEqual(["part queue", "traffic shape", "dataGb"]);
+  const b = draft({ parts: [...draft().parts, { type: "queue", tier: "small", why: "async" }], trafficShape: "steady" });
+  expect(compareDrafts(draft(), b).disputes).toEqual(["part queue", "traffic shape"]);
 });
 
 test("agreeing pair never calls the tie-breaker", async () => {

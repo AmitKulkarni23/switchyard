@@ -12,10 +12,10 @@ const byType = (d: DesignDraft) => {
   return m;
 };
 
-/** Numbers agree within 2×; small values (< 1) agree with each other. */
-const close = (a: number, b: number) => (a < 1 && b < 1) || (Math.min(a, b) > 0 && Math.max(a, b) / Math.min(a, b) <= 2);
-
-/** Material agreement between two drafts. Free text (why, question wording) is never compared. */
+/**
+ * Structural agreement between two drafts: parts, sizes, traffic shape. Numbers never count:
+ * they're guesses the user reviews and edits, so they're merged by median instead of escalating.
+ */
 export function compareDrafts(a: DesignDraft, b: DesignDraft): { agree: boolean; disputes: string[] } {
   const disputes: string[] = [];
   const pa = byType(a), pb = byType(b);
@@ -24,7 +24,6 @@ export function compareDrafts(a: DesignDraft, b: DesignDraft): { agree: boolean;
     else if (isSized(t) && pa.get(t)!.tier !== pb.get(t)!.tier) disputes.push(`size of ${t}`);
   }
   if (a.trafficShape !== b.trafficShape) disputes.push("traffic shape");
-  for (const k of NUMBERS) if (!close(a.assumptions[k].value, b.assumptions[k].value)) disputes.push(k);
   return { agree: disputes.length === 0, disputes };
 }
 

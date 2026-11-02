@@ -141,7 +141,7 @@ idea ─┬─▶ z-ai/glm-5.3 ───────────┐  in parallel
 
 About $0.006 per idea when the pair agrees, $0.03 when it escalates. Models are config: `DESIGN_PRIMARY_MODELS`, `DESIGN_TIEBREAK_MODEL`.
 
-- **Agreement is checked in code**: same set of part types, same tier on sized parts, same traffic shape, numbers within 2×. Free text (`why`, question wording) is never compared. Questions are topics from a fixed list; code supplies each topic's answer options.
+- **Agreement is checked in code**: same set of part types, same tier on sized parts, same traffic shape. Numbers never trigger the tie-breaker: they are guesses the user reviews, merged by median. Free text (`why`) is never compared. Questions are topics from a fixed list; code supplies each topic's answer options.
 - Each call: strict JSON schema (`DesignDraft`), temperature 0, 20 s timeout, one retry with the validation error, `provider.require_parameters` so OpenRouter only routes to providers that honour the schema.
 - A failed or timed-out cheap model counts as disagreement. Fewer than 2 valid drafts → 502 with a clear message and the starter picker.
 - **Stateless**: no memory between requests. Postgres stores only a cache (`design_drafts`, keyed by idea + rulebook version + models), so the same idea never costs twice and always gets the same answer, and records whether it escalated.
