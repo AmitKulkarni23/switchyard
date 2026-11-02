@@ -189,21 +189,20 @@ const NUMBERS: Record<NumberKey, { label: string; unit: string; steps: number[] 
 const nearest = (steps: number[], v: number) => steps.reduce((best, s, i) => (Math.abs(Math.log1p(s) - Math.log1p(v)) < Math.abs(Math.log1p(steps[best]!) - Math.log1p(v)) ? i : best), 0);
 const compact = (n: number) => n.toLocaleString("en-US", { notation: n >= 10_000 ? "compact" : "standard", maximumFractionDigits: 1 });
 
-/** Guessed numbers first, flagged, each with a slider over sensible steps and an exact field. Any edit confirms it. */
+/** Numbers in a fixed order (rows never move while you drag), guesses flagged, each with a slider over sensible steps and an exact field. Any edit confirms it. */
 function NumbersBlock({ design, setDesign }: { design: Design; setDesign: (d: Design) => void }) {
   const keys = relevantNumbers(design.parts);
   const guessed = keys.filter((k) => design.guessed?.includes(k));
-  const ordered = [...guessed, ...keys.filter((k) => !guessed.includes(k))];
   const set = (k: NumberKey, v: number) => setDesign({ ...design, assumptions: { ...design.assumptions, [k]: Math.max(0, v) }, guessed: (design.guessed ?? []).filter((g) => g !== k) });
   if (!keys.length) return null;
   return (
-    <Box component="section" aria-labelledby="numbers" sx={{ mt: 2.5, p: 2, bgcolor: "#fff", border: `${guessed.length ? 2 : 1}px solid ${guessed.length ? red : rule}` }}>
+    <Box component="section" aria-labelledby="numbers" sx={{ mt: 2.5, p: 2, bgcolor: "#fff", border: `2px solid ${guessed.length ? red : rule}` }}>
       <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
         <Typography id="numbers" sx={{ ...label, color: guessed.length ? red : ink }}>{guessed.length ? `We guessed ${guessed.length} number${guessed.length > 1 ? "s" : ""}. Check them` : "Your numbers"}</Typography>
         {guessed.length > 0 && <Button variant="text" onClick={() => setDesign({ ...design, guessed: (design.guessed ?? []).filter((g) => !keys.includes(g as NumberKey)) })} sx={{ p: 0, minWidth: 0, color: ink, textDecoration: "underline", textUnderlineOffset: 3 }}>These look right</Button>}
       </Box>
       <Box sx={{ display: "grid", gap: 1.5, mt: 1.5 }}>
-        {ordered.map((k) => {
+        {keys.map((k) => {
           const n = NUMBERS[k], v = design.assumptions[k], isGuess = guessed.includes(k);
           return (
             <Box key={k} sx={{ display: "grid", gap: 0.5 }}>
