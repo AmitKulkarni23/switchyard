@@ -22,10 +22,11 @@ export async function analyze(bytes: Uint8Array): Promise<Workload> {
 
 /**
  * analyze() in a child process that's killed at the deadline. Uploads are untrusted: a crafted file can
- * only waste its own process, never block the server or take it down with it.
+ * only waste its own process, never block the server or take it down with it. The child gets no environment
+ * and skips .env files, so the parser never holds our secrets. ponytail: not a sandbox; add one if parsing grows riskier.
  */
 export async function analyzeIsolated(bytes: Uint8Array): Promise<Workload> {
-  const child = Bun.spawn([process.execPath, import.meta.path], { stdin: bytes, stdout: "pipe", stderr: "ignore", timeout: PARSE_TIMEOUT_MS, killSignal: "SIGKILL" });
+  const child = Bun.spawn([process.execPath, "--no-env-file", import.meta.path], { env: {}, stdin: bytes, stdout: "pipe", stderr: "ignore", timeout: PARSE_TIMEOUT_MS, killSignal: "SIGKILL" });
   const [out, code] = await Promise.all([new Response(child.stdout).text(), child.exited]);
   if (code !== 0) throw new Error(`parser exited with ${code}`);
   const result = JSON.parse(out) as { workload: Workload } | { unsupported: string };
