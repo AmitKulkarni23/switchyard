@@ -41,6 +41,7 @@ switchyard/
 │   ├── normalize.ts          # FocusRow[] → Workload (catalog lookup + mapping table)
 │   ├── pricers/              # railway.ts, aws.ts; index.ts: registry
 │   ├── design/               # idea path: parts, starter designs, rules.md prompt, panel (cheap pair + tie-breaker), consensus, share (link encoding)
+│   ├── log.ts                # structured JSON logs: log.debug/info/warn/error
 │   ├── compare.ts            # current vs destination, ranges, disappears / no-equivalent lists
 │   ├── llm/fallback.ts       # OpenRouter hook, disabled, unimplemented
 │   ├── schema/               # Zod: FocusRow, Component, Workload, Assumptions, Estimate
@@ -100,6 +101,13 @@ railway up             # deploy
 - `/health` returns 200 when the server is up.
 - Validate env vars at startup and fail with a clear log line.
 - Unknown file formats return a clear "unsupported format" error, never a guess.
+
+## Logging
+
+- Backend logs MUST go through `log.debug|info|warn|error(event, fields)` in `backend/log.ts`: one JSON object per line, filterable in Railway with `@level:` and `@event:`.
+- Levels: `error` for failures that need action, `warn` for degraded but working, `info` for lifecycle and normal outcomes, `debug` for detail (off in production unless `LOG_LEVEL=debug`).
+- Every catch block logs, unless the failure is the client's and Railway's HTTP logs already record it. Request events include `requestId` from `X-Railway-Request-Id`.
+- Bill content, idea text, client IPs and secrets MUST NOT be logged. Parser failures report fixed labels only (`reason`, `step`, `errorType`).
 
 ## Infrastructure as Code
 

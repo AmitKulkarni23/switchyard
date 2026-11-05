@@ -17,7 +17,7 @@ export function pdfLines(bytes: Uint8Array): Promise<PdfLine[]> {
 
 async function readLines(bytes: Uint8Array): Promise<PdfLine[]> {
   const pdf = await getDocumentProxy(bytes.slice());
-  if (pdf.numPages > MAX_PAGES) throw new Error(`too many pages: ${pdf.numPages}`);
+  if (pdf.numPages > MAX_PAGES) throw Object.assign(new Error("too many pages"), { name: "PageLimitError" });
   const out: PdfLine[] = [];
   for (let p = 1; p <= pdf.numPages; p++) {
     const { items } = await (await pdf.getPage(p)).getTextContent();

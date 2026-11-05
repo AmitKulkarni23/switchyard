@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { type Bucket, createEstimate, fitsStore, getEstimate, limiter, MAX_UPLOAD_BYTES, slidingWindow, type Store } from "../backend/api";
 import { pdfLines } from "../backend/adapters/pdf-text";
 import type { Workload } from "../backend/schema";
@@ -93,4 +93,57 @@ test("CSV exports are refused for now, with a pointer to the PDF", async () => {
     expect((await res.json()).error).toBe("Unsupported file: CSV exports aren't supported yet. SwitchYard reads AWS invoice PDFs, which you can download from the AWS Billing console.");
     expect(objects.size).toBe(0); // still deleted
   }
+});
+
+/** Runs fn and returns the JSON log lines it wrote. */
+async function logsOf(fn: () => Promise<unknown>) {
+  const out = spyOn(console, "log").mockImplementation(() => {});
+  out.mockClear();
+  try {
+    await fn();
+    return out.mock.calls.map((c) => JSON.parse(String(c[0])) as Record<string, unknown>);
+  } finally {
+    out.mockRestore();
+  }
+}
+
+test("rejected files log a fixed reason and the request id, never the content", async () => {
+  const withId = (data: BlobPart) => {
+    const form = new FormData();
+    form.append("file", new Blob([data]), "x");
+    return new Request("http://x", { method: "POST", body: form, headers: { "x-railway-request-id": "req-1" } });
+  };
+  const notInvoice = await logsOf(() => createEstimate(withId("name,email\nada-secret,a@b.c\n"), {}));
+  expect(notInvoice).toEqual([expect.objectContaining({ level: "info", event: "upload_rejected", reason: "not_pdf", requestId: "req-1" })]);
+  expect(JSON.stringify(notInvoice)).not.toContain("ada-secret");
+  const broken = await logsOf(() => createEstimate(withId("%PDF-1.4 secret-text garbage"), {}));
+  expect(broken[0]).toMatchObject({ event: "upload_rejected", reason: "pdf_unreadable" });
+  expect(broken[0]!.errorType).toBeString();
+  expect(JSON.stringify(broken)).not.toContain("secret-text");
+  const csv = await logsOf(async () => createEstimate(withId(await fixture("focus.csv")), {}));
+  expect(csv[0]).toMatchObject({ event: "upload_rejected", reason: "csv_disabled" });
+});
+
+test("a parsed bill logs its counts", async () => {
+  const lines = await logsOf(async () => createEstimate(upload(await fixture("aws-invoice.pdf")), {}));
+  expect(lines[0]).toMatchObject({ level: "info", event: "upload_parsed", format: "aws-invoice-pdf", notPriced: 0 });
+  expect(lines[0]!.components).toBeGreaterThan(0);
+});
+
+test("a bucket outage is reported as ours, not as a bad bill", async () => {
+  const deleted: string[] = [];
+  const bucket: Bucket = { write: async () => { throw new Error("S3 down"); }, delete: async (k) => void deleted.push(k) };
+  let res!: Response;
+  const lines = await logsOf(async () => (res = await createEstimate(upload(await fixture("aws-invoice.pdf")), { bucket })));
+  expect(res.status).toBe(500);
+  expect((await res.json()).error).toContain("on our side");
+  expect(lines[0]).toMatchObject({ level: "error", event: "upload_store_failed", error: "S3 down" });
+  expect(deleted).toHaveLength(1);
+});
+
+test("failed deletes and saves are logged as errors", async () => {
+  const bucket: Bucket = { write: async () => {}, delete: async () => { throw new Error("delete refused"); } };
+  const store: Store = { save: async () => { throw new Error("db down"); }, load: async () => undefined };
+  const lines = await logsOf(async () => createEstimate(upload(await fixture("aws-invoice.pdf")), { bucket, store }));
+  expect(lines.map((l) => [l.level, l.event])).toEqual([["error", "upload_delete_failed"], ["info", "upload_parsed"], ["error", "estimate_save_failed"]]);
 });

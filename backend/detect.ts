@@ -3,7 +3,8 @@ import { pdfLines } from "./adapters/pdf-text";
 import type { FileFormat as Format } from "./schema";
 
 export class UnsupportedFormatError extends Error {
-  constructor(detail: string) {
+  /** `reason` and `errorType` are safe to log: fixed labels, never file content. */
+  constructor(detail: string, readonly reason: string, readonly errorType?: string) {
     super(`Unsupported file: ${detail} SwitchYard reads AWS invoice PDFs, which you can download from the AWS Billing console.`);
   }
 }
@@ -16,16 +17,16 @@ export async function detect(bytes: Uint8Array): Promise<Format> {
     let lines;
     try {
       lines = await pdfLines(bytes);
-    } catch {
-      throw new UnsupportedFormatError("this PDF could not be read.");
+    } catch (e) {
+      throw new UnsupportedFormatError("this PDF could not be read.", "pdf_unreadable", e instanceof Error ? e.name : undefined);
     }
     if (lines.some((l) => /Amazon Web Services/i.test(l.text))) return "aws-invoice-pdf";
-    throw new UnsupportedFormatError("this PDF is not an AWS invoice.");
+    throw new UnsupportedFormatError("this PDF is not an AWS invoice.", "not_aws_invoice");
   }
-  if (bytes.includes(0)) throw new UnsupportedFormatError("this is not a PDF.");
+  if (bytes.includes(0)) throw new UnsupportedFormatError("this is not a PDF.", "not_pdf");
   const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes.subarray(0, 64 * 1024));
   const header = new Set((parseCsv(text.split(/\r?\n/, 1)[0] ?? "")[0] ?? []).map(normHeader));
   if (header.has("lineitemunblendedcost")) return "aws-cur-csv";
   if (header.has("billedcost") && header.has("servicename")) return "focus-csv";
-  throw new UnsupportedFormatError("this is not a PDF.");
+  throw new UnsupportedFormatError("this is not a PDF.", "not_pdf");
 }

@@ -1,6 +1,7 @@
 import { compare } from "./compare";
 import { UnsupportedFormatError } from "./detect";
-import { analyzeIsolated } from "./pipeline";
+import { analyzeIsolated, ParseFailedError } from "./pipeline";
+import { errorMessage, log } from "./log";
 import { z } from "zod";
 import { IDEA_MAX } from "./design/parts";
 import { draftDesign, PANEL, PanelError, type Caller, type PanelResult } from "./design/panel";
@@ -40,20 +41,31 @@ export async function createEstimate(req: Request, { bucket, store, uploadLimit 
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   const key = `uploads/${crypto.randomUUID()}`;
+  const requestId = req.headers.get("x-railway-request-id");
   let workload: Workload;
   try {
-    if (bucket) await bucket.write(key, bytes);
+    if (bucket) {
+      try {
+        await bucket.write(key, bytes);
+      } catch (err) {
+        log.error("upload_store_failed", { requestId, key, error: errorMessage(err) });
+        return fail(500, "Something went wrong on our side. Try again in a moment.");
+      }
+    }
     workload = await analyzeIsolated(bytes);
   } catch (err) {
-    if (err instanceof UnsupportedFormatError) return fail(415, err.message);
-    console.error("parse failed:", err instanceof Error ? err.message : "unknown error"); // never log bill content
+    if (err instanceof UnsupportedFormatError) {
+      log.info("upload_rejected", { requestId, reason: err.reason, errorType: err.errorType });
+      return fail(415, err.message);
+    }
+    log.error("parse_failed", { requestId, ...(err instanceof ParseFailedError ? err.fields : { reason: "spawn_failed", errorType: err instanceof Error ? err.name : "unknown" }) }); // never bill content
     return fail(422, "We recognised the format but could not read this bill.");
   } finally {
-    if (bucket) await bucket.delete(key).catch((e) => console.error(`bucket delete failed for ${key}:`, e instanceof Error ? e.message : e));
+    if (bucket) await bucket.delete(key).catch((e) => log.error("upload_delete_failed", { requestId, key, error: errorMessage(e) })); // a bill may still be in the bucket
   }
 
-  console.log(`parsed ${workload.format}: ${workload.components.length} components, ${workload.unparsed.length} not priced`);
-  const id = store && fitsStore(workload) ? await store.save(workload).catch((e) => (console.error("save failed:", e instanceof Error ? e.message : e), null)) : null;
+  log.info("upload_parsed", { requestId, format: workload.format, components: workload.components.length, notPriced: workload.unparsed.length });
+  const id = store && fitsStore(workload) ? await store.save(workload).catch((e) => (log.error("estimate_save_failed", { requestId, error: errorMessage(e) }), null)) : null;
   return json({ id, workload, estimate: compare(workload) }, 201);
 }
 
@@ -81,19 +93,20 @@ export async function createDesign(req: Request, ip: string, { caller, store, ra
   if (!parsed.success) return fail(400, parsed.error.issues[0]?.message ?? "Invalid request.");
   const input = parsed.data;
 
+  const requestId = req.headers.get("x-railway-request-id");
   const key = new Bun.CryptoHasher("sha256").update(JSON.stringify([RULES_VERSION, PANEL, input.idea.toLowerCase(), input.requestsPerDay, input.dataGb])).digest("hex");
-  const cached = await store?.getDraft?.(key).catch(() => undefined);
+  const cached = await store?.getDraft?.(key).catch((e) => log.warn("draft_cache_read_failed", { requestId, error: errorMessage(e) }));
   if (cached) return respond({ ...(cached as PanelResult), cached: true });
 
   if (rateLimit && !rateLimit(ip)) return fail(429, "That's a lot of drafts. Try again in an hour, or start from a starter design.");
   try {
     const result = await draftDesign(input, caller, PANEL, req.signal);
-    console.log(`design drafted: ${result.parts.length} parts, escalated=${result.escalated}, models ${result.models.map((m) => `${m.model}:${m.ok ? "ok" : "fail"}`).join(" ")}`);
-    await store?.saveDraft?.(key, result, result.escalated).catch((e) => console.error("draft cache save failed:", e instanceof Error ? e.message : e));
+    log[result.models.every((m) => m.ok) ? "info" : "warn"]("design_drafted", { requestId, parts: result.parts.length, describesProduct: result.describesProduct, escalated: result.escalated, disputes: result.disputes, models: result.models });
+    await store?.saveDraft?.(key, result, result.escalated).catch((e) => log.warn("draft_cache_save_failed", { requestId, error: errorMessage(e) }));
     return respond(result);
   } catch (e) {
     if (e instanceof PanelError) {
-      console.error("design panel failed:", e.detail); // provider errors stay in logs; never the idea text
+      log.error("design_panel_failed", { requestId, error: e.detail }); // provider errors stay in logs; never the idea text
       return fail(502, e.message);
     }
     throw e;

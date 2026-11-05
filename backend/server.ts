@@ -2,13 +2,22 @@ import { S3Client } from "bun";
 import { clientIp, createDesign, createEstimate, type Deps, getEstimate, limiter, MAX_UPLOAD_BYTES, slidingWindow } from "./api";
 import { openRouterCaller } from "./design/openrouter";
 import { pgStore } from "./db";
+import { errorMessage, log } from "./log";
 import index from "../frontend/index.html";
+
+// Last resort: log anything nobody caught as one structured line, then exit so Railway restarts us.
+const crash = (kind: string) => (err: unknown) => {
+  log.error("unhandled_error", { kind, error: errorMessage(err), stack: err instanceof Error ? err.stack : undefined });
+  process.exit(1);
+};
+process.on("uncaughtException", crash("uncaughtException"));
+process.on("unhandledRejection", crash("unhandledRejection"));
 
 function bucketFromEnv(env = process.env): Deps["bucket"] {
   const { BUCKET_NAME, BUCKET_ENDPOINT, BUCKET_ACCESS_KEY_ID, BUCKET_SECRET_ACCESS_KEY, BUCKET_REGION } = env;
   const set = [BUCKET_NAME, BUCKET_ENDPOINT, BUCKET_ACCESS_KEY_ID, BUCKET_SECRET_ACCESS_KEY].filter(Boolean).length;
   if (set === 0) {
-    console.log("No bucket configured: uploads are parsed in memory only.");
+    log.info("bucket_not_configured", { effect: "uploads are parsed in memory only" });
     return undefined;
   }
   if (set < 4) throw new Error("Bucket config incomplete: set BUCKET_NAME, BUCKET_ENDPOINT, BUCKET_ACCESS_KEY_ID and BUCKET_SECRET_ACCESS_KEY.");
@@ -18,7 +27,7 @@ function bucketFromEnv(env = process.env): Deps["bucket"] {
 
 async function storeFromEnv(url = process.env.DATABASE_URL): Promise<Deps["store"]> {
   if (!url) {
-    console.log("DATABASE_URL not set: share links are disabled.");
+    log.warn("database_not_configured", { effect: "bill share links are disabled" });
     return undefined;
   }
   return pgStore(url);
@@ -26,7 +35,7 @@ async function storeFromEnv(url = process.env.DATABASE_URL): Promise<Deps["store
 
 const HOUR = 3_600_000;
 const key = process.env.OPENROUTER_API_KEY;
-if (!key) console.log("OPENROUTER_API_KEY not set: idea drafting is off; the starter-design picker is shown instead.");
+if (!key) log.warn("openrouter_not_configured", { effect: "idea drafting is off; starter designs are shown instead" });
 const deps: Deps = { bucket: bucketFromEnv(), store: await storeFromEnv(), caller: key ? openRouterCaller(key) : undefined, rateLimit: limiter(slidingWindow(10, HOUR), slidingWindow(100, HOUR)), uploadLimit: limiter(slidingWindow(20, HOUR), slidingWindow(200, HOUR)) };
 
 const server = Bun.serve({
@@ -44,14 +53,15 @@ const server = Bun.serve({
     "/api/estimates/:id": { GET: (req) => getEstimate(req.params.id, deps) },
   },
   error(err) {
-    console.error("unhandled:", err.message);
+    log.error("unhandled_error", { kind: "request", error: err.message, stack: err.stack });
     return Response.json({ error: "Something went wrong." }, { status: 500 });
   },
 });
 
-console.log(`SwitchYard listening on ${server.url}`);
+log.info("server_started", { url: server.url.href });
 
 process.on("SIGTERM", () => {
+  log.info("shutdown", { signal: "SIGTERM" });
   server.stop();
   process.exit(0);
 });

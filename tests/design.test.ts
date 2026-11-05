@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { clientIp, createDesign, limiter, slidingWindow } from "../backend/api";
 import { compareDrafts, mergeDrafts } from "../backend/design/consensus";
 import { DesignDraft } from "../backend/design/draft";
@@ -239,4 +239,22 @@ test("ideas over 1,000 characters are refused", async () => {
   const res = await post("x".repeat(1001));
   expect(res.status).toBe(400);
   expect((await res.json()).error).toContain("1,000");
+});
+
+test("a failed cache read and a failed model are logged, without the idea", async () => {
+  const out = spyOn(console, "log").mockImplementation(() => {});
+  out.mockClear();
+  try {
+    const idea = "A private idea about booking dentists online for clinics";
+    const { call } = fake({ "z-ai/glm-5.3": draft(), "deepseek/deepseek-v4-flash": new Error("deepseek: HTTP 429"), "openai/gpt-6.1-sol": draft() });
+    const store = { save: async () => "", load: async () => undefined, getDraft: async () => { throw new Error("db down"); } };
+    await createDesign(new Request("http://x", { method: "POST", body: JSON.stringify({ idea }), headers: { "x-railway-request-id": "req-2" } }), "ip", { caller: call, store });
+    const lines = out.mock.calls.map((c) => JSON.parse(String(c[0])));
+    expect(lines[0]).toMatchObject({ level: "warn", event: "draft_cache_read_failed", error: "db down", requestId: "req-2" });
+    expect(lines[1]).toMatchObject({ level: "warn", event: "design_drafted", escalated: true });
+    expect(lines[1].models.find((m: { ok: boolean }) => !m.ok).error).toBe("deepseek: HTTP 429");
+    expect(JSON.stringify(lines)).not.toContain("dentists");
+  } finally {
+    out.mockRestore();
+  }
 });

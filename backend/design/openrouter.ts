@@ -14,6 +14,7 @@ export function openRouterCaller(apiKey: string, fetchImpl: typeof fetch = fetch
   return async (model, input, signal) => {
     const messages: { role: string; content: string }[] = [{ role: "system", content: await loadRules() }, { role: "user", content: userMessage(input) }];
     let lastError = "";
+    let lastErrorType = "";
     // Low reasoning effort: GLM 5.3 answers in ~3 s instead of ~15 s on the same draft. Both settings are
     // dropped on retry if no provider accepts them (GPT-6.1 Sol rejects temperature).
     let tuning: { temperature?: number; reasoning?: { effort: string } } = { temperature: 0, reasoning: { effort: "low" } };
@@ -46,9 +47,10 @@ export function openRouterCaller(apiKey: string, fetchImpl: typeof fetch = fetch
         return DesignDraft.parse(JSON.parse(content.replace(/^```(?:json)?\s*|\s*```$/g, "")));
       } catch (e) {
         lastError = e instanceof Error ? e.message.slice(0, 500) : "invalid JSON";
+        lastErrorType = e instanceof Error ? e.name : "unknown";
         messages.push({ role: "assistant", content }, { role: "user", content: `That did not match the schema: ${lastError}. Return corrected JSON only.` });
       }
     }
-    throw new Error(`${model}: invalid output twice (${lastError.slice(0, 120)})`);
+    throw new Error(`${model}: invalid output twice (${lastErrorType})`); // this reaches the logs, and model output can echo the idea
   };
 }
