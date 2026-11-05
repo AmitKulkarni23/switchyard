@@ -50,6 +50,9 @@ export const STARTERS: { id: string; label: string; summary: string; parts: Part
   { id: "kv-api", label: "API on a key-value store", summary: "Simple lookups by key, no joins.", parts: [part("web-service", "the API"), part("key-value-store", "items looked up by key")] },
 ];
 
+/** ponytail: flat guess; Railway reports no hit rate and only cacheable responses count. Make it a user number if CDN designs matter. */
+const CDN_HIT_SHARE = 0.5;
+
 export const DEFAULT_ASSUMPTIONS: Design["assumptions"] = {
   requestsPerDay: 50_000, kbPerRequest: 50, dataGb: 5, filesGb: 20, trafficShape: "business-hours",
   emailsPerDay: 1_000, smsPerDay: 0, concurrentConnections: 500, monthlyActiveUsers: 5_000,
@@ -58,17 +61,25 @@ export const DEFAULT_ASSUMPTIONS: Design["assumptions"] = {
 /** Email and SMS go through an external sender on either cloud (SES/SNS on AWS, the same or Resend/Twilio from Railway): same cost both sides. */
 export const messagingCost = (emailsPerDay: number, smsPerDay: number, r = awsPriceBook.rates) => (emailsPerDay * 30 * r.ses_email_thousand) / 1000 + smsPerDay * 30 * r.sms_us_message;
 
+/** "How many emails or texts a day?" answers the total: keep the split the design already has (all email if it has none). */
+export function splitMessages(total: number, a: Pick<Design["assumptions"], "emailsPerDay" | "smsPerDay">) {
+  const sum = a.emailsPerDay + a.smsPerDay;
+  const smsPerDay = sum ? Math.round((total * a.smsPerDay) / sum) : 0;
+  return { emailsPerDay: total - smsPerDay, smsPerDay };
+}
+
 /** Design → the same Workload format bills produce. Pure; runs in the browser. */
 export function designToWorkload(d: Design): Workload {
   const a = d.assumptions;
   const egressGb = (a.requestsPerDay * 30 * a.kbPerRequest) / 1_000_000;
   const STREAM_GB = { small: 10, medium: 50, large: 200 } as const; // retained events on the broker's volume
   const hasCdn = d.parts.some((p) => p.on && p.type === "cdn");
+  const originEgressGb = hasCdn ? egressGb * (1 - CDN_HIT_SHARE) : egressGb; // on Railway a cache hit incurs no egress
   const components: Component[] = d.parts.filter((p) => p.on).map((p, i) => {
     const t = TIERS[p.tier];
     const size = { vcpu: 0, memoryGb: 0, storageGb: 0, objectStorageGb: 0, egressGb: 0 };
     const drivers: Component["drivers"] = { tier: p.tier, trafficShape: a.trafficShape };
-    if (p.type === "web-service") Object.assign(size, t, { egressGb }), Object.assign(drivers, { requestsPerDay: a.requestsPerDay, kbPerRequest: a.kbPerRequest, behindCdn: hasCdn ? 1 : 0 });
+    if (p.type === "web-service") Object.assign(size, t, { egressGb: originEgressGb }), Object.assign(drivers, { requestsPerDay: a.requestsPerDay, kbPerRequest: a.kbPerRequest, behindCdn: hasCdn ? 1 : 0 });
     if (p.type === "background-worker" || p.type === "cache") Object.assign(size, t);
     if (p.type === "relational-db") Object.assign(size, t, { storageGb: Math.max(1, a.dataGb) }), (drivers.dataGb = a.dataGb);
     if (p.type === "scheduled-job") Object.assign(size, { vcpu: 1 * (5 / 1440), memoryGb: 1 * (5 / 1440) }), Object.assign(drivers, { runsPerDay: 1, minutesPerRun: 5 });

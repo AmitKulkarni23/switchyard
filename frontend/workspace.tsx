@@ -5,7 +5,7 @@ import { compareBoth, estimateBasis } from "../backend/compare";
 import { railwayPriceBook } from "../backend/data/price-books";
 import { awsPriceBook } from "../backend/pricers/aws";
 import { TOPIC_OPTIONS } from "../backend/design/draft";
-import { type Design, designToWorkload, isSized, type NumberKey, PART_LABEL, PART_TYPES, type PartType, relevantNumbers, SHAPE_UTILIZATION, type Tier, type TrafficShape } from "../backend/design/parts";
+import { type Design, designToWorkload, isSized, type NumberKey, PART_LABEL, PART_TYPES, type PartType, relevantNumbers, SHAPE_UTILIZATION, splitMessages, type Tier, type TrafficShape } from "../backend/design/parts";
 import type { Workload } from "../backend/schema";
 import { Mark, Masthead } from "./results";
 import { condensed, figures, green, ink, label, muted, red, rule, wash } from "./theme";
@@ -250,7 +250,7 @@ function DesignPanel({ design, setDesign }: { design: Design; setDesign: (d: Des
     if (q.topic === "traffic-shape") a2.trafficShape = value as TrafficShape;
     if (q.topic === "data-size") a2.dataGb = Number(value), confirm("dataGb");
     if (q.topic === "active-users") a2.monthlyActiveUsers = Number(value), confirm("monthlyActiveUsers");
-    if (q.topic === "messaging-volume") a2.emailsPerDay = Number(value), confirm("emailsPerDay");
+    if (q.topic === "messaging-volume") Object.assign(a2, splitMessages(Number(value), a2)), confirm("emailsPerDay"), confirm("smsPerDay");
     const ensure = (types: PartType[], on: boolean) => {
       let parts = next.parts.map((p) => (types.includes(p.type) ? { ...p, on } : p));
       if (on) for (const t of types) if (!parts.some((p) => p.type === t)) parts = [...parts, { type: t, tier: "small" as Tier, why: "you said yes", on: true }];

@@ -50,7 +50,7 @@ export const MAPPING: Record<string, Mapping> = {
   "part:search": { category: "search", label: "Search", sizing: "none", targets: service("OpenSearch or Meilisearch on Railway", "A search service from a template, with a volume for the index.") },
   "part:stream": { category: "stream", label: "Event stream", sizing: "none", targets: service("Kafka-compatible broker (Redpanda) on Railway", "A broker service with a volume for retained events.") },
   "part:messaging": { category: "messaging", label: "Email and SMS", sizing: "none", targets: none("Sent through an external provider (SES, Resend, Twilio) at the same cost.") },
-  "part:cdn": { category: "cdn", label: "CDN", sizing: "none", targets: service("Railway CDN caching", "Cached responses at Railway's edge; egress is still billed on the service. CDN pricing not yet verified.") },
+  "part:cdn": { category: "cdn", label: "CDN", sizing: "none", targets: service("Railway CDN caching", "Cached responses at Railway's edge at no extra charge. A cache hit incurs no egress; the estimate assumes half of traffic is served from cache.") },
   "part:realtime": { category: "compute", label: "Realtime (WebSockets)", sizing: "none", targets: service("Railway service", "A service holding WebSocket connections, billed on use.") },
   "part:auth": { category: "auth", label: "User sign-in", sizing: "none", targets: service("An auth library inside your web service", "No separate charge; or use a hosted provider such as Clerk or Auth0.") },
   "aws:opensearch": { category: "search", label: "OpenSearch Service", sizing: "instance", targets: service("OpenSearch or Meilisearch on Railway", "A search service with a volume for the index.") },

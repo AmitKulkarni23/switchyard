@@ -1,5 +1,5 @@
 import { S3Client } from "bun";
-import { createDesign, createEstimate, type Deps, getEstimate, MAX_UPLOAD_BYTES, slidingWindow } from "./api";
+import { clientIp, createDesign, createEstimate, type Deps, draftLimit, getEstimate, MAX_UPLOAD_BYTES } from "./api";
 import { openRouterCaller } from "./design/openrouter";
 import { pgStore } from "./db";
 import index from "../frontend/index.html";
@@ -26,7 +26,7 @@ async function storeFromEnv(url = process.env.DATABASE_URL): Promise<Deps["store
 
 const key = process.env.OPENROUTER_API_KEY;
 if (!key) console.log("OPENROUTER_API_KEY not set: idea drafting is off; the starter-design picker is shown instead.");
-const deps: Deps = { bucket: bucketFromEnv(), store: await storeFromEnv(), caller: key ? openRouterCaller(key) : undefined, rateLimit: slidingWindow(10, 3_600_000) };
+const deps: Deps = { bucket: bucketFromEnv(), store: await storeFromEnv(), caller: key ? openRouterCaller(key) : undefined, rateLimit: draftLimit() };
 
 const server = Bun.serve({
   port: Number(process.env.PORT ?? 3000),
@@ -38,7 +38,7 @@ const server = Bun.serve({
     // Synthetic demo bill for "Try a sample bill"; never a real one.
     "/sample-bill.pdf": () => new Response(Bun.file(`${import.meta.dir}/../tests/fixtures/aws-invoice.pdf`), { headers: { "content-type": "application/pdf" } }),
     "/api/estimates": { POST: (req) => createEstimate(req, deps) },
-    "/api/designs": { POST: (req, srv) => createDesign(req, req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || srv.requestIP(req)?.address || "unknown", deps) },
+    "/api/designs": { POST: (req, srv) => createDesign(req, clientIp(req, srv.requestIP(req)?.address ?? "unknown"), deps) },
     "/config": Response.json({ designs: !!key }),
     "/api/estimates/:id": { GET: (req) => getEstimate(req.params.id, deps) },
   },

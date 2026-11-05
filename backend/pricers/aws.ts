@@ -129,7 +129,8 @@ export function priceAws(w: Workload, r = awsPriceBook.rates): AwsPriced {
       }
       case "part:auth": {
         const mau = Number(d.monthlyActiveUsers ?? 0), billable = Math.max(0, mau - r.cognito_free_mau);
-        lines.push({ ...base, uses: "Cognito (Essentials)", cost: one(billable * r.cognito_mau), formula: `${mau.toLocaleString("en-US")} monthly active users, first ${r.cognito_free_mau.toLocaleString("en-US")} free` });
+        // Same library as the Railway side, so sign-in doesn't skew the comparison; Cognito is shown as the managed option.
+        lines.push({ ...base, uses: "An auth library inside your web service", cost: one(0), formula: "Same as on Railway: no separate charge", alternative: `Cognito Essentials instead: ${usd(billable * r.cognito_mau)}/mo for ${mau.toLocaleString("en-US")} monthly active users, first ${r.cognito_free_mau.toLocaleString("en-US")} free.` });
         break;
       }
       case "part:object-storage":

@@ -8,6 +8,7 @@ export type QuestionTopic = (typeof QUESTION_TOPICS)[number];
 const Num = z.strictObject({ value: z.number().min(0), assumed: z.boolean() });
 
 export const DesignDraft = z.strictObject({
+  describesProduct: z.boolean(),
   parts: z.array(z.strictObject({ type: z.enum(PART_TYPES), tier: z.enum(["small", "medium", "large"]), why: z.string().max(200) })).min(1).max(12),
   trafficShape: z.enum(["steady", "business-hours", "spiky", "mostly-idle"]),
   assumptions: z.strictObject({ requestsPerDay: Num, kbPerRequest: Num, dataGb: Num, filesGb: Num, emailsPerDay: Num, smsPerDay: Num, concurrentConnections: Num, monthlyActiveUsers: Num }),

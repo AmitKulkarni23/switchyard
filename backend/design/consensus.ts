@@ -24,6 +24,7 @@ export function compareDrafts(a: DesignDraft, b: DesignDraft): { agree: boolean;
     else if (isSized(t) && pa.get(t)!.tier !== pb.get(t)!.tier) disputes.push(`size of ${t}`);
   }
   if (a.trafficShape !== b.trafficShape) disputes.push("traffic shape");
+  if (a.describesProduct !== b.describesProduct) disputes.push("whether this describes a product");
   return { agree: disputes.length === 0, disputes };
 }
 
@@ -39,6 +40,7 @@ function mode<T>(xs: T[], order: T[]): T {
 }
 
 export type Merged = {
+  describesProduct: boolean;
   parts: Part[];
   trafficShape: TrafficShape;
   assumptions: Record<(typeof NUMBERS)[number], number>;
@@ -63,6 +65,7 @@ export function mergeDrafts(drafts: DesignDraft[]): Merged {
   const settled = (t: QuestionTopic) => parts.some((p) => p.on && p.type === ANSWERED_BY_PART[t]);
 
   return {
+    describesProduct: drafts.filter((d) => !d.describesProduct).length * 2 <= n, // rejected only on a strict majority
     parts,
     trafficShape: mode(drafts.map((d) => d.trafficShape), SHAPE_ORDER),
     assumptions: Object.fromEntries(NUMBERS.map((k) => [k, median(drafts.map((d) => d.assumptions[k].value))])) as Merged["assumptions"],

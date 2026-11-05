@@ -84,6 +84,10 @@ function App() {
       const res = await fetch("/api/designs", { method: "POST", signal: abort.current.signal, headers: { "content-type": "application/json" },
         body: JSON.stringify({ idea: idea.trim(), requestsPerDay: optNum(nums.requestsPerDay), dataGb: optNum(nums.dataGb) }) });
       const body = await res.json();
+      if (res.status === 422) {
+        setHint(body.error);
+        return setState({ kind: "entry" });
+      }
       if (!res.ok) return setState({ kind: "entry", picking: true, draftError: body.error });
       const r = body as PanelResult & { cached?: boolean };
       const ok = r.models.filter((m) => m.ok).map((m) => name(m.model));

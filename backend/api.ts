@@ -2,7 +2,7 @@ import { compare } from "./compare";
 import { UnsupportedFormatError } from "./detect";
 import { analyze } from "./pipeline";
 import { z } from "zod";
-import { draftDesign, PANEL, PanelError, type Caller } from "./design/panel";
+import { draftDesign, PANEL, PanelError, type Caller, type PanelResult } from "./design/panel";
 import type { Workload } from "./schema";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -66,7 +66,9 @@ const DesignRequest = z.strictObject({
   requestsPerDay: z.number().min(0).max(1e9).optional(),
   dataGb: z.number().min(0).max(1e6).optional(),
 });
-const RULES_VERSION = "3"; // bump whenever rules.md or the draft schema changes: invalidates cached drafts
+const RULES_VERSION = "4"; // bump whenever rules.md or the draft schema changes: invalidates cached drafts
+
+const respond = (r: PanelResult & { cached?: boolean }) => (r.describesProduct ? json(r) : fail(422, "That doesn't look like a product description. Say what you're building and who uses it."));
 
 /** POST /api/designs: idea → cheap pair → (tie-breaker) → merged draft. Only the idea text leaves the server. */
 export async function createDesign(req: Request, ip: string, { caller, store, rateLimit }: Deps): Promise<Response> {
@@ -77,14 +79,14 @@ export async function createDesign(req: Request, ip: string, { caller, store, ra
 
   const key = new Bun.CryptoHasher("sha256").update(JSON.stringify([RULES_VERSION, PANEL, input.idea.toLowerCase(), input.requestsPerDay, input.dataGb])).digest("hex");
   const cached = await store?.getDraft?.(key).catch(() => undefined);
-  if (cached) return json({ ...(cached as object), cached: true });
+  if (cached) return respond({ ...(cached as PanelResult), cached: true });
 
   if (rateLimit && !rateLimit(ip)) return fail(429, "That's a lot of drafts. Try again in an hour, or start from a starter design.");
   try {
     const result = await draftDesign(input, caller, PANEL, req.signal);
     console.log(`design drafted: ${result.parts.length} parts, escalated=${result.escalated}, models ${result.models.map((m) => `${m.model}:${m.ok ? "ok" : "fail"}`).join(" ")}`);
     await store?.saveDraft?.(key, result, result.escalated).catch((e) => console.error("draft cache save failed:", e instanceof Error ? e.message : e));
-    return json(result);
+    return respond(result);
   } catch (e) {
     if (e instanceof PanelError) {
       console.error("design panel failed:", e.detail); // provider errors stay in logs; never the idea text
@@ -92,6 +94,14 @@ export async function createDesign(req: Request, ip: string, { caller, store, ra
     }
     throw e;
   }
+}
+
+/** Railway's edge sets X-Real-IP. Never X-Forwarded-For: Railway doesn't document it and its first value can come from the client. */
+export const clientIp = (req: Request, fallback: string) => req.headers.get("x-real-ip")?.trim() || fallback;
+
+/** Per person, plus a cap on everyone that bounds the OpenRouter bill even if an IP can be faked or rotated. */
+export function draftLimit(perIp = slidingWindow(10, 3_600_000), overall = slidingWindow(100, 3_600_000)) {
+  return (ip: string) => perIp(ip) && overall("all");
 }
 
 /** ponytail: in-memory sliding window per replica; move to Postgres or Redis if we run more than one replica. */

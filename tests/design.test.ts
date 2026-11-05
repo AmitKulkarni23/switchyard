@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createDesign, slidingWindow } from "../backend/api";
+import { clientIp, createDesign, draftLimit, slidingWindow } from "../backend/api";
 import { compareDrafts, mergeDrafts } from "../backend/design/consensus";
 import { DesignDraft } from "../backend/design/draft";
 import { openRouterCaller, userMessage } from "../backend/design/openrouter";
@@ -7,6 +7,7 @@ import { type Caller, draftDesign } from "../backend/design/panel";
 
 const n = (value: number, assumed = true) => ({ value, assumed });
 const draft = (over: Partial<DesignDraft> = {}): DesignDraft => DesignDraft.parse({
+  describesProduct: true,
   parts: [{ type: "web-service", tier: "small", why: "booking site" }, { type: "relational-db", tier: "small", why: "appointments" }, { type: "scheduled-job", tier: "small", why: "reminders" }],
   trafficShape: "business-hours",
   assumptions: { requestsPerDay: n(100000), kbPerRequest: n(50), dataGb: n(2), filesGb: n(0), emailsPerDay: n(0), smsPerDay: n(0), concurrentConnections: n(0), monthlyActiveUsers: n(5000) },
@@ -116,7 +117,7 @@ test("merged parts keep the models' order", () => {
 
 test("every worked example in rules.md matches the strict schema", async () => {
   const rules = await Bun.file(`${import.meta.dir}/../backend/design/rules.md`).text();
-  const examples = rules.split("\n").filter((l) => l.startsWith('{"parts"'));
+  const examples = rules.split("\n").filter((l) => l.startsWith('{"describesProduct"'));
   expect(examples.length).toBe(3);
   for (const e of examples) expect(() => DesignDraft.parse(JSON.parse(e))).not.toThrow();
 });
@@ -132,7 +133,8 @@ test("new parts price on both sides", async () => {
   // email and SMS go through an external sender: the same cost on both sides (1000 × 30 × $0.10/1000 + 100 × 30 × $0.01195)
   expect(rw("Email and SMS").destination.low).toBeCloseTo(3 + 35.85, 2);
   expect(a("Email and SMS").cost.low).toBeCloseTo(3 + 35.85, 2);
-  expect(a("User sign-in").cost.low).toBeCloseTo(10000 * 0.015, 2); // 20k MAU, 10k free
+  expect(a("User sign-in").cost.low).toBe(0); // same library on both sides
+  expect(a("User sign-in").alternative).toContain("$150"); // Cognito: 20k MAU, 10k free
   expect(rw("User sign-in").destination.low).toBe(0);
   expect(a("Search").uses).toBe("OpenSearch Service t3.small.search");
   expect(a("Event stream").uses).toBe("Kinesis Data Streams (1 shard)");
@@ -159,4 +161,42 @@ test("CloudFront charges only above its free tier", async () => {
   const cdn = (servedGb: number, requestsPerDay: number) => priceAws({ provider: "AWS", format: "design", unparsed: [], excluded: [], components: [{ id: "01", key: "part:cdn", category: "cdn", label: "CDN", sourceService: "", detail: "", size: { vcpu: 0, memoryGb: 0, storageGb: 0, objectStorageGb: 0, egressGb: 0 }, usageBased: false, currentMonthlyCost: 0, rowCount: 1, warnings: [], drivers: { servedGb, requestsPerDay } }] }).lines[0]!.cost.low;
   expect(cdn(500, 100_000)).toBe(0);
   expect(cdn(2024, 1_000_000)).toBeCloseTo(1000 * 0.085 + 2000 * 0.01, 6); // 1,000 GB and 20M requests over
+});
+
+test("a messaging answer sets the total and keeps the split", async () => {
+  const { splitMessages } = await import("../backend/design/parts");
+  expect(splitMessages(50, { emailsPerDay: 50, smsPerDay: 2000 })).toEqual({ emailsPerDay: 1, smsPerDay: 49 });
+  expect(splitMessages(50, { emailsPerDay: 0, smsPerDay: 2000 })).toEqual({ emailsPerDay: 0, smsPerDay: 50 });
+  expect(splitMessages(500, { emailsPerDay: 0, smsPerDay: 0 })).toEqual({ emailsPerDay: 500, smsPerDay: 0 });
+});
+
+test("a CDN halves Railway's billed egress and leaves AWS's served traffic alone", async () => {
+  const { designToWorkload, DEFAULT_ASSUMPTIONS } = await import("../backend/design/parts");
+  const w = (types: ("web-service" | "cdn")[]) => designToWorkload({ idea: "", parts: types.map((type) => ({ type, tier: "small", why: "", on: true })), assumptions: { ...DEFAULT_ASSUMPTIONS, requestsPerDay: 1000, kbPerRequest: 1000 } });
+  expect(w(["web-service"]).components[0]!.size.egressGb).toBe(30);
+  const cdn = w(["web-service", "cdn"]);
+  expect(cdn.components[0]!.size.egressGb).toBe(15);
+  expect(cdn.components[1]!.drivers.servedGb).toBe(30);
+});
+
+test("text that isn't a product is refused, and needs a strict majority to be", async () => {
+  expect(mergeDrafts([draft({ describesProduct: false }), draft({ describesProduct: false })]).describesProduct).toBe(false);
+  expect(mergeDrafts([draft({ describesProduct: false }), draft()]).describesProduct).toBe(true);
+  expect(compareDrafts(draft(), draft({ describesProduct: false })).disputes).toEqual(["whether this describes a product"]);
+  const saved: unknown[] = [];
+  const req = () => new Request("http://x/api/designs", { method: "POST", body: JSON.stringify({ idea: "asdf qwer zxcv uiop hjkl vbnm" }) });
+  const { call } = fake({ "z-ai/glm-5.3": draft({ describesProduct: false }), "deepseek/deepseek-v4-flash": draft({ describesProduct: false }) });
+  const res = await createDesign(req(), "ip", { caller: call, store: { save: async () => "", load: async () => undefined, getDraft: async () => saved[0], saveDraft: async (_, r) => void saved.push(r) } });
+  expect(res.status).toBe(422);
+  const again = await createDesign(req(), "ip", { caller: call, store: { save: async () => "", load: async () => undefined, getDraft: async () => saved[0] } });
+  expect(again.status).toBe(422); // a cached refusal stays a refusal
+});
+
+test("the client IP ignores X-Forwarded-For, and the overall cap holds across IPs", () => {
+  const req = (h: Record<string, string>) => new Request("http://x", { headers: h });
+  expect(clientIp(req({ "x-real-ip": "1.1.1.1", "x-forwarded-for": "9.9.9.9" }), "fb")).toBe("1.1.1.1");
+  expect(clientIp(req({ "x-forwarded-for": "9.9.9.9" }), "fb")).toBe("fb");
+  const limit = draftLimit(slidingWindow(2, 1000), slidingWindow(3, 1000));
+  expect([limit("a"), limit("a"), limit("a")]).toEqual([true, true, false]); // per IP
+  expect([limit("b"), limit("c")]).toEqual([true, false]); // overall: a's blocked try didn't count
 });
