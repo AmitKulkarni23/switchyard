@@ -21,7 +21,7 @@ A deterministic re-pricer, not an estimate generator. Every figure is computed i
 
 ## Operating Context
 
-- Input: an AWS invoice PDF or cost export CSV (Cost and Usage Report, FOCUS). The format is detected from content, never from the file name.
+- Input: an AWS invoice PDF. The format is detected from content, never from the file name.
 - Pipeline: upload → detect → adapter (to FOCUS) → normalize (to a Workload, one row per component) → pricer → compare → results.
 - The bill does not contain utilization. There are zero required questions: the default is a range; an optional "How busy are your servers?" slider narrows it. On the results page, "must keep" services are toggles that recompute the estimate.
 - Results include line items per component, a "what disappears" list with savings, and a "no equivalent" list (SQS, DynamoDB, ...).
@@ -31,7 +31,7 @@ A deterministic re-pricer, not an estimate generator. Every figure is computed i
 ## Capabilities and Constraints
 
 - Stack: Bun, React + Material UI, Zod, Postgres + Drizzle. Railway IaC in `.railway/railway.ts`.
-- Accepts only PDF and CSV. An unknown format gets a clear "unsupported format" error, never a guess.
+- Accepts only AWS invoice PDFs. An unknown format gets a clear "unsupported format" error, never a guess.
 - Lines that can't be parsed are shown as "not priced", never silently dropped.
 - The optional OpenRouter LLM fallback is unimplemented and disabled. The app works fully without an API key.
 - Rates come from `backend/data/price-books/railway.yaml`, sourced from railway.com/pricing and the Railway docs.

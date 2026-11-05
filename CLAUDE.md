@@ -4,7 +4,7 @@ Upload a bill from any cloud, see what it costs on Railway. A user uploads a clo
 
 ## What It Does
 
-Upload (PDF or CSV) → detect the format from file content → convert to FOCUS rows → normalize into a Workload IR (one row per component) → price on the destination (Railway by default) → compare → results page. Utilization is not in the bill, so the Railway estimate is a range (low/high utilization), narrowed by an optional "how busy are your servers?" slider. "Must keep" services are toggles that recompute the estimate.
+Upload (AWS invoice PDF) → detect the format from file content → convert to FOCUS rows → normalize into a Workload IR (one row per component) → price on the destination (Railway by default) → compare → results page. Utilization is not in the bill, so the Railway estimate is a range (low/high utilization), narrowed by an optional "how busy are your servers?" slider. "Must keep" services are toggles that recompute the estimate.
 
 ## Design Principles
 
@@ -88,7 +88,7 @@ railway up             # deploy
 
 ## Security Model
 
-- Accept only PDF and CSV, checked by content, not file name or extension.
+- Accept only AWS invoice PDFs, checked by content, not file name or extension. CSV parsers exist but are switched off in `pipeline.ts` until tested on real exports.
 - Uploads go to a private bucket; the object is deleted right after parsing, success or failure.
 - Never commit real bills. Test fixtures are synthetic.
 - No secrets in the repo. `.env.example` lists every variable.

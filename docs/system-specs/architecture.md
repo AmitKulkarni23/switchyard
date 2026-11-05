@@ -32,7 +32,7 @@ Identifies the input format from **file content, never the file name or extensio
 - provider text inside the PDF (e.g. "Amazon Web Services")
 - distinctive CSV header columns (e.g. AWS CUR `lineItem/UsageAccountId`, FOCUS `BilledCost`, `ServiceName`)
 
-Returns a format id (e.g. `aws-invoice-pdf`, `aws-cur-csv`, `focus-csv`). Anything else → a clear **unsupported format** error.
+Returns a format id (e.g. `aws-invoice-pdf`, `aws-cur-csv`, `focus-csv`). Anything else → a clear **unsupported format** error. Only `aws-invoice-pdf` is accepted today: `analyze` refuses the CSV formats until they're tested on real exports.
 
 ### 2. `backend/adapters/`
 

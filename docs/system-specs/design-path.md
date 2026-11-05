@@ -15,7 +15,7 @@ The bill path answers "what would my running system cost elsewhere?". This path 
 │  │ Describe your idea…                                    │  │  ← text: design path (LLM)
 │  │                                                        │  │
 │  └────────────────────────────────────────────────────────┘  │
-│  or drop a file: AWS bill (PDF/CSV) · CloudFormation ·       │  ← file: detected by content
+│  or drop a file: AWS bill (PDF)     · CloudFormation ·       │  ← file: detected by content
 │  Terraform plan · docker-compose                    [Choose] │     (no LLM)
 └──────────────────────────────────────────────────────────────┘
                  │                          │

@@ -7,12 +7,12 @@ Upload a bill from any cloud, see what it costs on Railway.
 ## How it works
 
 ```
-upload (PDF/CSV) ─▶ detect ─▶ adapter (→ FOCUS) ─▶ normalize (→ Workload) ─▶ pricer (Railway) ─▶ compare ─▶ results
+upload (PDF) ─▶ detect ─▶ adapter (→ FOCUS) ─▶ normalize (→ Workload) ─▶ pricer (Railway) ─▶ compare ─▶ results
 ```
 
 All math is done in code. No LLM, no API key needed.
 
-Formats: AWS invoice PDF, AWS Cost and Usage Report CSV (1.0 and 2.0), FOCUS CSV. Destination: Railway.
+Format: AWS invoice PDF. Parsers for Cost and Usage Report and FOCUS CSVs exist but are switched off until tested on real exports. Destination: Railway.
 
 ## API
 

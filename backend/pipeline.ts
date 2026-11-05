@@ -10,6 +10,8 @@ const MAX_COMPONENTS = 2000; // far above any real bill; keeps pricing and the r
 /** upload bytes → detect → adapter (FOCUS) → [LLM fallback, off by default] → normalize (Workload). */
 export async function analyze(bytes: Uint8Array): Promise<Workload> {
   const format = await detect(bytes);
+  // ponytail: CSV parsers are built but untested on real exports; remove this line once a real CUR and FOCUS file pass.
+  if (format !== "aws-invoice-pdf") throw new UnsupportedFormatError("CSV exports aren't supported yet.");
   const { provider, rows, unparsed } = await adapters[format](bytes);
   const config = fallbackConfig();
   const extra = config.enabled ? await classifyUnparsed(unparsed, config) : [];

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type Bucket, createEstimate, getEstimate, limiter, MAX_UPLOAD_BYTES, slidingWindow, type Store } from "../backend/api";
+import { type Bucket, createEstimate, fitsStore, getEstimate, limiter, MAX_UPLOAD_BYTES, slidingWindow, type Store } from "../backend/api";
 import { pdfLines } from "../backend/adapters/pdf-text";
 import type { Workload } from "../backend/schema";
 
@@ -53,7 +53,7 @@ test("too large → 413, empty → 400, missing field → 400", async () => {
 
 test("share links: load by id, 404 for unknown, 503 when disabled", async () => {
   const store = memoryStore();
-  await createEstimate(upload(await fixture("focus.csv")), { store });
+  await createEstimate(upload(await fixture("aws-invoice.pdf")), { store });
   const res = await getEstimate("abc123", { store });
   expect(res.status).toBe(200);
   expect((await res.json()).estimate.current).toBeGreaterThan(0);
@@ -78,12 +78,19 @@ test("a PDF is parsed once however many times its lines are read", async () => {
   expect(await pdfLines(bytes)).toBe(await pdfLines(bytes));
 });
 
-test("a workload too big to store still returns, without a share link", async () => {
-  const row = (i: number) => `0.01,Usage,Unmapped,line ${i},,1,Hrs,2026-08-01T00:00:00Z,2026-09-01T00:00:00Z,AWSUnknown,x,,`;
-  const csv = ["lineItem/UnblendedCost,lineItem/LineItemType,product/ProductName,lineItem/LineItemDescription,lineItem/ResourceId,lineItem/UsageAmount,pricing/unit,lineItem/UsageStartDate,lineItem/UsageEndDate,lineItem/ProductCode,lineItem/UsageType,product/instanceType,product/databaseEngine", ...Array.from({ length: 20_000 }, (_, i) => row(i))].join("\n");
-  const saved: unknown[] = [];
-  const res = await createEstimate(upload(csv), { store: { save: async (w) => (saved.push(w), "abc123"), load: async () => undefined } });
-  expect(res.status).toBe(201);
-  expect((await res.json()).id).toBeNull();
-  expect(saved).toEqual([]);
+test("a workload too big to store gets no share link", () => {
+  const line = (i: number) => ({ description: `line ${i}`, service: "Unmapped", cost: 0.01, reason: "no mapping" });
+  const workload = (n: number): Workload => ({ provider: "AWS", format: "aws-invoice-pdf", components: [], excluded: [], unparsed: Array.from({ length: n }, (_, i) => line(i)) });
+  expect(fitsStore(workload(10))).toBe(true);
+  expect(fitsStore(workload(20_000))).toBe(false);
+});
+
+test("CSV exports are refused for now, with a pointer to the PDF", async () => {
+  for (const file of ["aws-cur.csv", "focus.csv"]) {
+    const { bucket, objects } = fakeBucket();
+    const res = await createEstimate(upload(await fixture(file)), { bucket });
+    expect(res.status).toBe(415);
+    expect((await res.json()).error).toBe("Unsupported file: CSV exports aren't supported yet. SwitchYard reads AWS invoice PDFs, which you can download from the AWS Billing console.");
+    expect(objects.size).toBe(0); // still deleted
+  }
 });

@@ -2,7 +2,7 @@
 
 ## Bills are sensitive
 
-- Accept only PDF and CSV, checked by content in `detect.ts` (magic bytes / headers), not by name, extension or `Content-Type`.
+- Accept only AWS invoice PDFs, checked by content in `detect.ts` (magic bytes, provider text), not by name, extension or `Content-Type`.
 - Enforce a maximum upload size.
 - Uploads go to a **private** Railway bucket. The object is **deleted right after parsing**, on success and on failure.
 - The raw bill is never written to Postgres or logs. Only the derived `Workload` is stored.

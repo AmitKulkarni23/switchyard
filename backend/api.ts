@@ -7,7 +7,8 @@ import { draftDesign, PANEL, PanelError, type Caller, type PanelResult } from ".
 import type { Workload } from "./schema";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-const MAX_SAVED_BYTES = 1024 * 1024; // a huge export still gets its result, just no share link; bounds what uploads can add to Postgres
+/** A huge bill still gets its result, just no share link; bounds what uploads can add to Postgres. */
+export const fitsStore = (w: Workload) => JSON.stringify(w).length <= 1024 * 1024;
 
 /** The parts of Bun's S3Client we use: the private upload bucket. */
 export type Bucket = { write(key: string, data: Uint8Array): Promise<unknown>; delete(key: string): Promise<unknown> };
@@ -52,7 +53,7 @@ export async function createEstimate(req: Request, { bucket, store, uploadLimit 
   }
 
   console.log(`parsed ${workload.format}: ${workload.components.length} components, ${workload.unparsed.length} not priced`);
-  const id = store && JSON.stringify(workload).length <= MAX_SAVED_BYTES ? await store.save(workload).catch((e) => (console.error("save failed:", e instanceof Error ? e.message : e), null)) : null;
+  const id = store && fitsStore(workload) ? await store.save(workload).catch((e) => (console.error("save failed:", e instanceof Error ? e.message : e), null)) : null;
   return json({ id, workload, estimate: compare(workload) }, 201);
 }
 
