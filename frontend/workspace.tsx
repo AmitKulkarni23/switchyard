@@ -5,6 +5,7 @@ import { compareBoth, estimateBasis } from "../backend/compare";
 import { railwayPriceBook } from "../backend/data/price-books";
 import { awsPriceBook } from "../backend/pricers/aws";
 import { TOPIC_OPTIONS } from "../backend/design/draft";
+import { encodeDesign } from "../backend/design/share";
 import { type Design, designToWorkload, isSized, type NumberKey, PART_LABEL, PART_TYPES, type PartType, relevantNumbers, SHAPE_UTILIZATION, splitMessages, type Tier, type TrafficShape } from "../backend/design/parts";
 import type { Workload } from "../backend/schema";
 import { Mark, Masthead } from "./results";
@@ -19,7 +20,7 @@ type Props =
   | { mode: "bill"; workload: Workload; fileName: string; sample: boolean; id: string | null; onReset: () => void };
 
 export function Workspace(props: Props) {
-  const initialBusy = props.mode === "design" ? SHAPE_UTILIZATION[props.design.assumptions.trafficShape] : [10, 50];
+  const initialBusy = props.mode === "design" ? (props.design.busy ?? SHAPE_UTILIZATION[props.design.assumptions.trafficShape]) : [10, 50];
   const [busy, setBusy] = useState<number[]>(initialBusy);
   const [mustKeep, setMustKeep] = useState<string[]>([]);
   const [open, setOpen] = useState<string | null>(null);
@@ -33,8 +34,15 @@ export function Workspace(props: Props) {
   const guessCount = props.mode === "design" ? relevantNumbers(props.design.parts).filter((k) => props.design.guessed?.includes(k)).length : 0;
   const diff = { low: aws.total.low - railway.destinationTotal.high, high: aws.total.high - railway.destinationTotal.low };
   const cheaper = diff.low >= 0 ? "Railway" : diff.high <= 0 ? "AWS" : null;
-  const source = props.mode === "design" ? `Your idea · ${workload.components.length} parts · illustrative, edit anything` : [props.fileName, props.sample && "sample bill (synthetic)", `${workload.components.length} parts from your bill`].filter(Boolean).join(" · ");
-  const share = props.mode === "bill" && props.id;
+  const source = props.mode === "design" ? `${props.design.shared ? "Shared idea" : "Your idea"} · ${workload.components.length} parts · illustrative, edit anything` : [props.fileName, props.sample && "sample bill (synthetic)", `${workload.components.length} parts from your bill`].filter(Boolean).join(" · ");
+  const [copied, setCopied] = useState(false);
+  const canShare = props.mode === "design" || !!props.id;
+  async function shareLink() {
+    const path = props.mode === "design" ? `/#d=${await encodeDesign(props.design, busy)}` : `/?e=${props.id}`;
+    history.replaceState(null, "", path); // the address bar holds the link too, in case the clipboard is blocked
+    await navigator.clipboard.writeText(location.origin + path).then(() => setCopied(true), () => {});
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <>
@@ -43,9 +51,8 @@ export function Workspace(props: Props) {
         <Box className="no-print" sx={{ ml: { md: "auto" }, display: "flex", gap: 1.5 }}>
           <Button variant="outlined" onClick={props.onReset} sx={{ color: "#fff", borderColor: "#fff", "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,.12)" } }}>Start over</Button>
           <Button variant="outlined" onClick={() => print()} sx={{ color: "#fff", borderColor: "#fff", "&:hover": { borderColor: "#fff", bgcolor: "rgba(255,255,255,.12)" } }}>Export PDF</Button>
-          <Button variant="contained" disabled={!share} title={share ? undefined : "Share links for designs come with the idea path"}
-            onClick={() => share && navigator.clipboard.writeText(`${location.origin}/?e=${props.id}`)}
-            sx={{ bgcolor: "#fff", color: red, "&:hover": { bgcolor: "#fff" }, "&.Mui-disabled": { bgcolor: "rgba(255,255,255,.6)", color: red } }}>Share link</Button>
+          <Button variant="contained" disabled={!canShare} onClick={shareLink} aria-live="polite"
+            sx={{ bgcolor: "#fff", color: red, "&:hover": { bgcolor: "#fff" }, "&.Mui-disabled": { bgcolor: "rgba(255,255,255,.6)", color: red } }}>{copied ? "Link copied" : "Share link"}</Button>
         </Box>
       </Masthead>
 

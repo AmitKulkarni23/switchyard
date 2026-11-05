@@ -200,3 +200,36 @@ test("the client IP ignores X-Forwarded-For, and the overall cap holds across IP
   expect([limit("a"), limit("a"), limit("a")]).toEqual([true, true, false]); // per IP
   expect([limit("b"), limit("c")]).toEqual([true, false]); // overall: a's blocked try didn't count
 });
+
+test("a design survives a share link, and bad links are refused", async () => {
+  const { DEFAULT_ASSUMPTIONS, STARTERS, designToWorkload } = await import("../backend/design/parts");
+  const { encodeDesign, decodeDesign } = await import("../backend/design/share");
+  const { compareBoth } = await import("../backend/compare");
+  const design = { idea: "A café booking app — 日本語 too <script>", parts: STARTERS[2]!.parts, assumptions: { ...DEFAULT_ASSUMPTIONS, smsPerDay: 40 }, guessed: ["dataGb"], questions: [], panelNote: "dropped" };
+  const link = await encodeDesign(design, [20, 45]);
+  expect(link).toMatch(/^[A-Za-z0-9_-]+$/);
+  expect(link.length).toBeLessThan(2000);
+  const back = (await decodeDesign(link))!;
+  expect(back).toEqual({ idea: design.idea, parts: design.parts, assumptions: design.assumptions, guessed: ["dataGb"], busy: [20, 45], shared: true });
+  const price = (d: typeof back) => compareBoth(designToWorkload(d), { utilization: { low: 0.2, high: 0.45 } });
+  expect(price(back).railway.destinationTotal).toEqual(price(design).railway.destinationTotal);
+
+  // largest allowed design still fits under the size cap
+  const big = { ...design, idea: "x".repeat(2000), parts: Array.from({ length: 30 }, (_, i) => ({ type: "search" as const, tier: "small" as const, why: String(i).repeat(200).slice(0, 200), on: true })) };
+  expect(await decodeDesign(await encodeDesign(big, [0, 100]))).not.toBeNull();
+
+  const pack = async (o: unknown) => {
+    const bytes = new Uint8Array(await new Response(new Blob([JSON.stringify(o)]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer());
+    return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  };
+  const valid = { idea: "x", parts: [], assumptions: DEFAULT_ASSUMPTIONS, guessed: [], busy: [0, 10] };
+  expect(await decodeDesign(await pack(valid))).not.toBeNull();
+  expect(await decodeDesign(await pack({ ...valid, parts: [{ type: "evil", tier: "small", why: "", on: true }] }))).toBeNull();
+  expect(await decodeDesign(await pack({ ...valid, assumptions: { ...DEFAULT_ASSUMPTIONS, dataGb: -1 } }))).toBeNull();
+  expect(await decodeDesign(await pack({ ...valid, busy: [90, 10] }))).toBeNull();
+  expect(await decodeDesign(await pack({ ...valid, extra: "field" }))).toBeNull();
+  expect(await decodeDesign(await pack({ ...valid, idea: "x".repeat(2001) }))).toBeNull();
+  expect(await decodeDesign("not-a-link")).toBeNull();
+  expect(await decodeDesign("")).toBeNull();
+  expect(await decodeDesign("A".repeat(16_001))).toBeNull();
+});

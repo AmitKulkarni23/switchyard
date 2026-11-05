@@ -152,7 +152,7 @@ About $0.006 per idea when the pair agrees, $0.03 when it escalates. Models are 
 
 The panel is four parallel HTTP calls that finish in seconds, inside one request: `Promise.allSettled` with per-model timeouts and one retry covers it. Temporal would add a server (or Temporal Cloud), a worker process and a second deploy for no durable state worth keeping. Revisit when there is a long-running, multi-step job that must survive restarts, e.g. scheduled re-pricing of saved estimates when price books change, or batch processing of very large cost exports.
 - Only the idea text is sent. Bills and templates never go to an LLM.
-- The saved draft is pinned to its share link, so a link always shows the same numbers.
+- A share link holds the design itself in the URL fragment (`/#d=...`, `backend/design/share.ts`). Nothing is stored and the fragment never reaches the server. Inputs stay fixed; prices are recomputed from the current price books when the link opens.
 - Rate-limited per IP; the endpoint returns 429 with a retry time.
 
 ## Without an API key

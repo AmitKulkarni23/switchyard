@@ -21,6 +21,10 @@ export type Design = {
   idea: string;
   questions?: { topic: import("./draft").QuestionTopic; text: string; answer?: string | number }[];
   panelNote?: string;
+  /** Slider position carried by a share link. */
+  busy?: number[];
+  /** Opened from a share link. */
+  shared?: boolean;
   /** Number keys nobody has confirmed yet: guessed by the models or left at the default. */
   guessed?: string[];
   parts: Part[];

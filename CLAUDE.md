@@ -40,7 +40,7 @@ switchyard/
 │   ├── adapters/             # one per input format → FocusRow[]
 │   ├── normalize.ts          # FocusRow[] → Workload (catalog lookup + mapping table)
 │   ├── pricers/              # railway.ts, aws.ts; index.ts: registry
-│   ├── design/               # idea path: parts, starter designs, rules.md prompt, panel (cheap pair + tie-breaker), consensus
+│   ├── design/               # idea path: parts, starter designs, rules.md prompt, panel (cheap pair + tie-breaker), consensus, share (link encoding)
 │   ├── compare.ts            # current vs destination, ranges, disappears / no-equivalent lists
 │   ├── llm/fallback.ts       # OpenRouter hook, disabled, unimplemented
 │   ├── schema/               # Zod: FocusRow, Component, Workload, Assumptions, Estimate

@@ -5,6 +5,7 @@ import { Box, Button, CssBaseline, LinearProgress, TextField, Typography } from 
 import { ThemeProvider } from "@mui/material/styles";
 import type { PanelResult } from "../backend/design/panel";
 import { DEFAULT_ASSUMPTIONS, type Design, STARTERS } from "../backend/design/parts";
+import { decodeDesign } from "../backend/design/share";
 import type { Workload } from "../backend/schema";
 import { Masthead } from "./results";
 import { condensed, ink, label, muted, red, rule, theme } from "./theme";
@@ -37,6 +38,11 @@ function App() {
 
   useEffect(() => {
     fetch("/config").then((r) => r.json()).then((c) => setDesignsOn(!!c.designs)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!location.hash.startsWith("#d=")) return;
+    decodeDesign(location.hash.slice(3)).then((design) => setState(design ? { kind: "design", design } : { kind: "entry", error: "This share link is damaged. Ask for it again." }));
   }, []);
 
   useEffect(() => {
