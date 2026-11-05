@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Upload a cloud bill and see what the same workload costs on Railway, as a range, with what disappears and what has no equivalent." />
+    <!-- Second layer behind React's escaping: only our own scripts run, and the page can't load from or send to anywhere else. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'" />
     <title>SwitchYard: what your cloud bill costs on Railway</title>
     <style>
       html { scrollbar-color: #111 #f4f3f0; }

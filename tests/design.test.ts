@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { clientIp, createDesign, draftLimit, slidingWindow } from "../backend/api";
+import { clientIp, createDesign, limiter, slidingWindow } from "../backend/api";
 import { compareDrafts, mergeDrafts } from "../backend/design/consensus";
 import { DesignDraft } from "../backend/design/draft";
 import { openRouterCaller, userMessage } from "../backend/design/openrouter";
@@ -196,7 +196,7 @@ test("the client IP ignores X-Forwarded-For, and the overall cap holds across IP
   const req = (h: Record<string, string>) => new Request("http://x", { headers: h });
   expect(clientIp(req({ "x-real-ip": "1.1.1.1", "x-forwarded-for": "9.9.9.9" }), "fb")).toBe("1.1.1.1");
   expect(clientIp(req({ "x-forwarded-for": "9.9.9.9" }), "fb")).toBe("fb");
-  const limit = draftLimit(slidingWindow(2, 1000), slidingWindow(3, 1000));
+  const limit = limiter(slidingWindow(2, 1000), slidingWindow(3, 1000));
   expect([limit("a"), limit("a"), limit("a")]).toEqual([true, true, false]); // per IP
   expect([limit("b"), limit("c")]).toEqual([true, false]); // overall: a's blocked try didn't count
 });
@@ -215,7 +215,7 @@ test("a design survives a share link, and bad links are refused", async () => {
   expect(price(back).railway.destinationTotal).toEqual(price(design).railway.destinationTotal);
 
   // largest allowed design still fits under the size cap
-  const big = { ...design, idea: "x".repeat(2000), parts: Array.from({ length: 30 }, (_, i) => ({ type: "search" as const, tier: "small" as const, why: String(i).repeat(200).slice(0, 200), on: true })) };
+  const big = { ...design, idea: "x".repeat(1000), parts: Array.from({ length: 30 }, (_, i) => ({ type: "search" as const, tier: "small" as const, why: String(i).repeat(200).slice(0, 200), on: true })) };
   expect(await decodeDesign(await encodeDesign(big, [0, 100]))).not.toBeNull();
 
   const pack = async (o: unknown) => {
@@ -228,8 +228,15 @@ test("a design survives a share link, and bad links are refused", async () => {
   expect(await decodeDesign(await pack({ ...valid, assumptions: { ...DEFAULT_ASSUMPTIONS, dataGb: -1 } }))).toBeNull();
   expect(await decodeDesign(await pack({ ...valid, busy: [90, 10] }))).toBeNull();
   expect(await decodeDesign(await pack({ ...valid, extra: "field" }))).toBeNull();
-  expect(await decodeDesign(await pack({ ...valid, idea: "x".repeat(2001) }))).toBeNull();
+  expect(await decodeDesign(await pack({ ...valid, idea: "x".repeat(1001) }))).toBeNull();
   expect(await decodeDesign("not-a-link")).toBeNull();
   expect(await decodeDesign("")).toBeNull();
   expect(await decodeDesign("A".repeat(16_001))).toBeNull();
+});
+
+test("ideas over 1,000 characters are refused", async () => {
+  const post = (idea: string) => createDesign(new Request("http://x", { method: "POST", body: JSON.stringify({ idea }) }), "ip", { caller: fake({}).call });
+  const res = await post("x".repeat(1001));
+  expect(res.status).toBe(400);
+  expect((await res.json()).error).toContain("1,000");
 });

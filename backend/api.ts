@@ -1,11 +1,13 @@
 import { compare } from "./compare";
 import { UnsupportedFormatError } from "./detect";
-import { analyze } from "./pipeline";
+import { analyzeIsolated } from "./pipeline";
 import { z } from "zod";
+import { IDEA_MAX } from "./design/parts";
 import { draftDesign, PANEL, PanelError, type Caller, type PanelResult } from "./design/panel";
 import type { Workload } from "./schema";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_SAVED_BYTES = 1024 * 1024; // a huge export still gets its result, just no share link; bounds what uploads can add to Postgres
 
 /** The parts of Bun's S3Client we use: the private upload bucket. */
 export type Bucket = { write(key: string, data: Uint8Array): Promise<unknown>; delete(key: string): Promise<unknown> };
@@ -16,13 +18,14 @@ export type Store = {
   getDraft?(key: string): Promise<unknown>;
   saveDraft?(key: string, result: unknown, escalated: boolean): Promise<void>;
 };
-export type Deps = { bucket?: Bucket; store?: Store; caller?: Caller; rateLimit?: (key: string) => boolean };
+export type Deps = { bucket?: Bucket; store?: Store; caller?: Caller; rateLimit?: (key: string) => boolean; uploadLimit?: (key: string) => boolean };
 
-const json = (body: unknown, status = 200) => Response.json(body, { status });
+const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "x-content-type-options": "nosniff" } });
 const fail = (status: number, error: string) => json({ error }, status);
 
 /** POST /api/estimates: multipart `file` → { id, workload, estimate }. The upload is deleted right after parsing. */
-export async function createEstimate(req: Request, { bucket, store }: Deps): Promise<Response> {
+export async function createEstimate(req: Request, { bucket, store, uploadLimit }: Deps, ip = "unknown"): Promise<Response> {
+  if (uploadLimit && !uploadLimit(ip)) return fail(429, "That's a lot of uploads. Try again in an hour.");
   if (Number(req.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES + 64 * 1024) return fail(413, "File too large. The limit is 10 MB.");
   let file: FormDataEntryValue | null;
   try {
@@ -39,7 +42,7 @@ export async function createEstimate(req: Request, { bucket, store }: Deps): Pro
   let workload: Workload;
   try {
     if (bucket) await bucket.write(key, bytes);
-    workload = await analyze(bytes);
+    workload = await analyzeIsolated(bytes);
   } catch (err) {
     if (err instanceof UnsupportedFormatError) return fail(415, err.message);
     console.error("parse failed:", err instanceof Error ? err.message : "unknown error"); // never log bill content
@@ -49,7 +52,7 @@ export async function createEstimate(req: Request, { bucket, store }: Deps): Pro
   }
 
   console.log(`parsed ${workload.format}: ${workload.components.length} components, ${workload.unparsed.length} not priced`);
-  const id = store ? await store.save(workload).catch((e) => (console.error("save failed:", e instanceof Error ? e.message : e), null)) : null;
+  const id = store && JSON.stringify(workload).length <= MAX_SAVED_BYTES ? await store.save(workload).catch((e) => (console.error("save failed:", e instanceof Error ? e.message : e), null)) : null;
   return json({ id, workload, estimate: compare(workload) }, 201);
 }
 
@@ -62,7 +65,7 @@ export async function getEstimate(id: string, { store }: Deps): Promise<Response
 }
 
 const DesignRequest = z.strictObject({
-  idea: z.string().trim().min(20, "Describe the idea in a sentence or two.").max(2000, "Keep the description under 2,000 characters."),
+  idea: z.string().trim().min(20, "Describe the idea in a sentence or two.").max(IDEA_MAX, `Keep the description to ${IDEA_MAX.toLocaleString("en-US")} characters.`),
   requestsPerDay: z.number().min(0).max(1e9).optional(),
   dataGb: z.number().min(0).max(1e6).optional(),
 });
@@ -99,8 +102,8 @@ export async function createDesign(req: Request, ip: string, { caller, store, ra
 /** Railway's edge sets X-Real-IP. Never X-Forwarded-For: Railway doesn't document it and its first value can come from the client. */
 export const clientIp = (req: Request, fallback: string) => req.headers.get("x-real-ip")?.trim() || fallback;
 
-/** Per person, plus a cap on everyone that bounds the OpenRouter bill even if an IP can be faked or rotated. */
-export function draftLimit(perIp = slidingWindow(10, 3_600_000), overall = slidingWindow(100, 3_600_000)) {
+/** Per person, plus a cap on everyone that bounds the cost even if an IP can be faked or rotated. */
+export function limiter(perIp: (key: string) => boolean, overall: (key: string) => boolean) {
   return (ip: string) => perIp(ip) && overall("all");
 }
 
@@ -109,6 +112,7 @@ export function slidingWindow(limit: number, windowMs: number) {
   const hits = new Map<string, number[]>();
   return (key: string) => {
     const now = Date.now();
+    if (hits.size > 10_000) hits.clear(); // rotating IPs can't grow this without bound
     const recent = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
     if (recent.length >= limit) return hits.set(key, recent), false;
     hits.set(key, [...recent, now]);

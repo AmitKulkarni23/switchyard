@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { Box, Button, CssBaseline, LinearProgress, TextField, Typography } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
 import type { PanelResult } from "../backend/design/panel";
-import { DEFAULT_ASSUMPTIONS, type Design, STARTERS } from "../backend/design/parts";
+import { DEFAULT_ASSUMPTIONS, type Design, IDEA_MAX, STARTERS } from "../backend/design/parts";
 import { decodeDesign } from "../backend/design/share";
 import type { Workload } from "../backend/schema";
 import { Masthead } from "./results";
@@ -146,7 +146,10 @@ function App() {
         <Box component="section" aria-labelledby="describe" sx={{ mt: 4, borderTop: `4px solid ${ink}`, pt: 2.5 }}>
           <Typography id="describe" component="h2" sx={{ fontWeight: 700, fontSize: { xs: 18, md: 22 } }}>What are you building?</Typography>
           <TextField multiline minRows={4} fullWidth value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="A booking app for dental clinics. About 500 clinics. Patients book appointments online, we text them a reminder the day before, and clinic staff have an admin dashboard."
-            slotProps={{ htmlInput: { "aria-label": "Describe your idea" } }} sx={{ mt: 1.5, "& .MuiOutlinedInput-root": { borderRadius: 0, fontSize: 17 }, "& fieldset": { borderColor: ink } }} />
+            slotProps={{ htmlInput: { "aria-label": "Describe your idea", maxLength: IDEA_MAX, "aria-describedby": "idea-count" } }} sx={{ mt: 1.5, "& .MuiOutlinedInput-root": { borderRadius: 0, fontSize: 17 }, "& fieldset": { borderColor: ink } }} />
+          <Typography id="idea-count" sx={{ mt: 0.5, fontSize: 14, textAlign: "right", color: idea.length >= IDEA_MAX ? red : muted, fontWeight: idea.length >= IDEA_MAX ? 700 : 400 }}>
+            {idea.length.toLocaleString("en-US")} / {IDEA_MAX.toLocaleString("en-US")} characters{idea.length >= IDEA_MAX ? ": that's the limit" : ""}
+          </Typography>
           <Box sx={{ display: "flex", gap: 2, mt: 2, flexWrap: "wrap", alignItems: "flex-end" }}>
             <Box><Typography sx={{ ...label, mb: 0.5 }}>Requests a day <span style={{ color: muted, textTransform: "none", letterSpacing: 0 }}>(optional)</span></Typography>
               <TextField size="small" type="number" value={nums.requestsPerDay} onChange={(e) => setNums({ ...nums, requestsPerDay: e.target.value })} placeholder="50000" slotProps={{ htmlInput: { min: 0, "aria-label": "Requests a day" } }} /></Box>

@@ -41,6 +41,10 @@
 | `GET /api/estimates/:id` | `{ id, workload, estimate }` for a share link; `404` unknown, `503` when Postgres isn't configured |
 | `GET /health` | `ok` |
 
-Idea drafts are limited to 10 an hour per client (`X-Real-IP`, set by Railway's edge) and 100 an hour overall, in memory per replica.
+Idea drafts are limited to 10 an hour per client (`X-Real-IP`, set by Railway's edge) and 100 an hour overall; uploads to 20 and 200. Both are in memory per replica. Ideas are capped at 1,000 characters.
 
-Known gaps: no rate limiting on uploads; share links never expire.
+Uploads are parsed in a child process killed after 10 seconds, so a crafted file can't block the server. PDFs are capped at 500 pages, workloads at 2,000 components.
+
+`frontend/index.html` sets a Content-Security-Policy behind React's escaping: scripts only from our origin, no outside connections. It allows inline styles because MUI injects them.
+
+Known gaps: bill share links never expire; the CSP is a meta tag because Bun's HTML routes can't set headers, so it can't include `frame-ancestors`.

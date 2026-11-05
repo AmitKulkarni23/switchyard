@@ -1,5 +1,5 @@
 import { S3Client } from "bun";
-import { clientIp, createDesign, createEstimate, type Deps, draftLimit, getEstimate, MAX_UPLOAD_BYTES } from "./api";
+import { clientIp, createDesign, createEstimate, type Deps, getEstimate, limiter, MAX_UPLOAD_BYTES, slidingWindow } from "./api";
 import { openRouterCaller } from "./design/openrouter";
 import { pgStore } from "./db";
 import index from "../frontend/index.html";
@@ -24,9 +24,10 @@ async function storeFromEnv(url = process.env.DATABASE_URL): Promise<Deps["store
   return pgStore(url);
 }
 
+const HOUR = 3_600_000;
 const key = process.env.OPENROUTER_API_KEY;
 if (!key) console.log("OPENROUTER_API_KEY not set: idea drafting is off; the starter-design picker is shown instead.");
-const deps: Deps = { bucket: bucketFromEnv(), store: await storeFromEnv(), caller: key ? openRouterCaller(key) : undefined, rateLimit: draftLimit() };
+const deps: Deps = { bucket: bucketFromEnv(), store: await storeFromEnv(), caller: key ? openRouterCaller(key) : undefined, rateLimit: limiter(slidingWindow(10, HOUR), slidingWindow(100, HOUR)), uploadLimit: limiter(slidingWindow(20, HOUR), slidingWindow(200, HOUR)) };
 
 const server = Bun.serve({
   port: Number(process.env.PORT ?? 3000),
@@ -36,8 +37,8 @@ const server = Bun.serve({
     "/": index,
     "/health": new Response("ok"),
     // Synthetic demo bill for "Try a sample bill"; never a real one.
-    "/sample-bill.pdf": () => new Response(Bun.file(`${import.meta.dir}/../tests/fixtures/aws-invoice.pdf`), { headers: { "content-type": "application/pdf" } }),
-    "/api/estimates": { POST: (req) => createEstimate(req, deps) },
+    "/sample-bill.pdf": () => new Response(Bun.file(`${import.meta.dir}/../tests/fixtures/aws-invoice.pdf`), { headers: { "content-type": "application/pdf", "x-content-type-options": "nosniff" } }),
+    "/api/estimates": { POST: (req, srv) => createEstimate(req, deps, clientIp(req, srv.requestIP(req)?.address ?? "unknown")) },
     "/api/designs": { POST: (req, srv) => createDesign(req, clientIp(req, srv.requestIP(req)?.address ?? "unknown"), deps) },
     "/config": Response.json({ designs: !!key }),
     "/api/estimates/:id": { GET: (req) => getEstimate(req.params.id, deps) },

@@ -4,6 +4,7 @@ import { Workload, type Component } from "../schema";
 /** The design path's only vocabulary: provider-neutral parts (see docs/system-specs/design-path.md). */
 export const PART_TYPES = ["web-service", "background-worker", "scheduled-job", "relational-db", "key-value-store", "queue", "object-storage", "cache", "search", "stream", "messaging", "cdn", "realtime", "auth"] as const;
 export type PartType = (typeof PART_TYPES)[number];
+export const IDEA_MAX = 1000; // characters in the idea box, on a draft request and in a share link
 export type Tier = "small" | "medium" | "large";
 export type TrafficShape = "steady" | "business-hours" | "spiky" | "mostly-idle";
 
