@@ -64,10 +64,12 @@ Builds the result:
 
 ## Utilization
 
-Bills show provisioned capacity, not usage. Zero required questions:
+Bills show provisioned capacity and how long it ran, not how busy it was. Zero required questions:
 
 - **Default**: show a range, e.g. 10% busy → 50% busy.
 - **Optional**: a single slider "How busy are your servers?" narrows the range.
+- **Usage-based parts** (`Component.usageBased`, today Aurora Serverless ACU-hours): the bill already measures consumption, so the slider doesn't apply to them. It's hidden when a bill has nothing left to assume.
+- The results page says what came **from the bill** and what is **still estimated** (`estimateBasis` in `compare.ts`).
 - On the results page, **"must keep"** services are toggles; toggling one recomputes the estimate (kept services stay at their current cost).
 
 Recomputing is pure and cheap (`price` + `compare` on the stored `Workload`), so it runs on every slider move or toggle without re-parsing the bill.

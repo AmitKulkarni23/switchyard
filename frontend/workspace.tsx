@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode, useMemo, useState } from "react";
 import type React from "react";
 import { Box, Button, Checkbox, MenuItem, Select, Slider, Table, TableBody, TableCell, TableHead, TableRow, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
-import { compareBoth } from "../backend/compare";
+import { compareBoth, estimateBasis } from "../backend/compare";
 import { railwayPriceBook } from "../backend/data/price-books";
 import { awsPriceBook } from "../backend/pricers/aws";
 import { TOPIC_OPTIONS } from "../backend/design/draft";
@@ -28,6 +28,8 @@ export function Workspace(props: Props) {
   const workload = useMemo(() => (props.mode === "design" ? designToWorkload(props.design) : props.workload), [props]);
   const { railway, aws } = useMemo(() => compareBoth(workload, { utilization: { low: busy[0]! / 100, high: busy[1]! / 100 }, mustKeep }), [workload, busy, mustKeep]);
 
+  const basis = props.mode === "bill" ? estimateBasis(workload, railway.lines) : null;
+  const usesBusy = !basis || basis.assumed.length > 0; // nothing left to assume on a bill → no slider
   const guessCount = props.mode === "design" ? relevantNumbers(props.design.parts).filter((k) => props.design.guessed?.includes(k)).length : 0;
   const diff = { low: aws.total.low - railway.destinationTotal.high, high: aws.total.high - railway.destinationTotal.low };
   const cheaper = diff.low >= 0 ? "Railway" : diff.high <= 0 ? "AWS" : null;
@@ -61,7 +63,7 @@ export function Workspace(props: Props) {
             <Typography sx={{ mt: 1, color: muted }}>{props.workload.components.length} parts read from {props.fileName}. {railway.notPriced.length ? `${railway.notPriced.length} line${railway.notPriced.length > 1 ? "s" : ""} not priced.` : ""} Tick "Must keep" in the table to leave a part on AWS.</Typography>
           )}
 
-          <Box sx={{ mt: 3, pt: 2, borderTop: `1px solid ${rule}` }}>
+          {usesBusy && <Box sx={{ mt: 3, pt: 2, borderTop: `1px solid ${rule}` }}>
             <Typography id="busy" sx={{ ...label }}>How busy are your servers?</Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1 }}>
               <Slider aria-labelledby="busy" value={busy} onChange={(_, v) => setBusy(v as number[])} min={0} max={100} step={5} getAriaValueText={(v) => `${v}% busy`}
@@ -69,13 +71,13 @@ export function Workspace(props: Props) {
               <Typography sx={{ ...figures, fontWeight: 700, minWidth: 64 }}>{pctRange(busy)}</Typography>
             </Box>
             <Typography sx={{ color: muted, fontSize: 13 }}>Railway bills what you use, so this moves the Railway side. AWS {aws.billed ? "is your bill as charged" : "bills what you provision, so it doesn't move"}.</Typography>
-          </Box>
+          </Box>}
         </Box>
 
         {/* ---------- right: Railway vs AWS ---------- */}
         <Box component="main" sx={{ px: { xs: 2, md: 4 }, py: 3, order: { xs: 1, lg: 2 }, minWidth: 0 }}>
           <Box component="section" aria-label="Verdict" sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, borderTop: `4px solid ${ink}`, borderBottom: `1px solid ${ink}` }}>
-            <Cell head="On Railway" value={range(railway.destinationTotal)} note={`per month · ${railway.plan.name === "None" ? "nothing moves" : `${railway.plan.name} plan`} · at ${pctRange(busy)} busy`} />
+            <Cell head="On Railway" value={range(railway.destinationTotal)} note={`per month · ${railway.plan.name === "None" ? "nothing moves" : `${railway.plan.name} plan`}${usesBusy ? ` · at ${pctRange(busy)} busy` : ""}`} />
             <Cell head={aws.billed ? "AWS today (billed)" : "On AWS"} value={range(aws.total)} note={aws.billed ? "per month, priced lines only" : "per month · right-sized, us-east-1"} />
             <Cell head="Difference" value={cheaper ? range({ low: Math.abs(cheaper === "Railway" ? diff.low : diff.high), high: Math.abs(cheaper === "Railway" ? diff.high : diff.low) }) : `${usd(-diff.low)} more to ${usd(diff.high)} less`}
               note={cheaper ? `less per month on ${cheaper}` : "on Railway, depending on how busy you are"} accent={cheaper === "AWS" ? red : cheaper === "Railway" ? green : undefined} last />
@@ -84,6 +86,13 @@ export function Workspace(props: Props) {
             <Typography role="status" sx={{ mt: 1, fontSize: 14, color: red, fontWeight: 600 }}>
               Based on {guessCount} guessed number{guessCount > 1 ? "s" : ""}. Check them on the left; prices update as you change them.
             </Typography>
+          )}
+
+          {basis && basis.fromBill.length > 0 && (
+            <Box role="status" sx={{ mt: 1.5, fontSize: 14, display: "grid", gap: 0.25 }}>
+              <span><strong>From your bill:</strong> {basis.fromBill.join(", ")}.</span>
+              {basis.assumed.length > 0 && <span><strong>Still estimated:</strong> CPU and memory use on {basis.assumed.join(", ")}. AWS bills don't record how busy a server is.</span>}
+            </Box>
           )}
 
           <Typography component="h2" sx={{ ...condensed, fontSize: 18, mt: 4, mb: 1 }}>Part by part</Typography>

@@ -65,6 +65,12 @@ test("real-bill naming: ECR isn't EC2; Aurora Serverless is sized from ACU-hours
     row({ ServiceName: "CloudWatch", ChargeDescription: "$0.00 per metric", BilledCost: 0 }),
   ] });
   expect(w.components).toHaveLength(1);
-  expect(w.components[0]).toMatchObject({ key: "aws:rds:postgres", size: { vcpu: 0.25, memoryGb: 2 } }); // 1 ACU on average
+  expect(w.components[0]).toMatchObject({ key: "aws:rds:postgres", size: { vcpu: 0.25, memoryGb: 2 }, usageBased: true }); // 1 ACU on average
   expect(w.unparsed).toEqual([]);
+});
+
+test("CUR's db.serverless rows are sized from ACU-hours, not looked up as an instance type", () => {
+  const w = normalize({ provider: "AWS", format: "aws-cur-csv", unparsed: [], rows: [{ BilledCost: 89.28, ChargeCategory: "Usage", ProviderName: "AWS", ServiceName: "Amazon Relational Database Service", ChargeDescription: "Aurora PostgreSQL Serverless v2", ResourceId: "db-1", ConsumedQuantity: 730, ConsumedUnit: "ACU-Hr", x_ServiceCode: "AmazonRDS", x_UsageType: "Aurora:ServerlessV2Usage", x_InstanceType: "db.serverless", x_DatabaseEngine: "Aurora PostgreSQL" }] });
+  expect(w.unparsed).toEqual([]);
+  expect(w.components[0]).toMatchObject({ key: "aws:rds:postgres", usageBased: true, size: { vcpu: 0.25, memoryGb: 2 } });
 });

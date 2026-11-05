@@ -11,7 +11,7 @@ const memoryShare = (u: number) => MEMORY_FLOOR + (1 - MEMORY_FLOOR) * u;
 
 const usd = (n: number) => `$${+n.toFixed(n < 1 ? 3 : 2)}`;
 const pct = (n: number) => `${Math.round(n * 100)}%`;
-const fmt = (n: number) => +n.toFixed(2);
+const fmt = (n: number) => (n > 0 && n < 0.01 ? "<0.01" : +n.toFixed(2));
 
 export type Priced = {
   plan: { name: string; monthlyFee: number; includedUsage: number };
@@ -19,16 +19,19 @@ export type Priced = {
   total: Range; // what you'd pay per month: destination plan + usage + anything kept on the source
 };
 
+const railwaySize = (c: Component) => (DATABASES.has(c.category) ? { ...c.size, memoryGb: Math.max(c.size.memoryGb, DB_MIN_MEMORY_GB) } : c.size);
+
 function usageCost(c: Component, u: number, r: PriceBook["rates"]) {
-  const s = DATABASES.has(c.category) ? { ...c.size, memoryGb: Math.max(c.size.memoryGb, DB_MIN_MEMORY_GB) } : c.size;
-  return s.vcpu * r.vcpu_month * u + s.memoryGb * r.memory_gb_month * memoryShare(u) + s.storageGb * r.volume_gb_month + s.objectStorageGb * r.object_storage_gb_month + s.egressGb * r.egress_gb;
+  const s = railwaySize(c);
+  // Usage-based sizes already reflect load: scaling them by the slider would count idle time twice.
+  return s.vcpu * r.vcpu_month * (c.usageBased ? 1 : u) + s.memoryGb * r.memory_gb_month * (c.usageBased ? 1 : memoryShare(u)) + s.storageGb * r.volume_gb_month + s.objectStorageGb * r.object_storage_gb_month + s.egressGb * r.egress_gb;
 }
 
 function formula(c: Component, { low, high }: Assumptions["utilization"], r: PriceBook["rates"]) {
-  const s = c.size;
+  const s = railwaySize(c);
   const parts = [
-    s.vcpu && `${fmt(s.vcpu)} vCPU × ${usd(r.vcpu_month)} × ${pct(low)}–${pct(high)} busy`,
-    s.memoryGb && `${fmt(s.memoryGb)} GB RAM × ${usd(r.memory_gb_month)} × ${pct(memoryShare(low))}–${pct(memoryShare(high))} used`,
+    s.vcpu && `${fmt(s.vcpu)} vCPU × ${usd(r.vcpu_month)}${c.usageBased ? "" : ` × ${pct(low)}–${pct(high)} busy`}`,
+    s.memoryGb && `${fmt(s.memoryGb)} GB RAM × ${usd(r.memory_gb_month)}${c.usageBased ? "" : ` × ${pct(memoryShare(low))}–${pct(memoryShare(high))} used`}`,
     s.storageGb && `${fmt(s.storageGb)} GB volume × ${usd(r.volume_gb_month)}`,
     s.objectStorageGb && `${fmt(s.objectStorageGb)} GB bucket × ${usd(r.object_storage_gb_month)}`,
     s.egressGb && `${fmt(s.egressGb)} GB egress × ${usd(r.egress_gb)}`,

@@ -82,7 +82,7 @@ export function designToWorkload(d: Design): Workload {
     if (p.type === "auth") drivers.monthlyActiveUsers = a.monthlyActiveUsers;
     if (p.type === "messaging") Object.assign(drivers, { emailsPerDay: a.emailsPerDay, smsPerDay: a.smsPerDay });
     const external = p.type === "messaging" ? messagingCost(a.emailsPerDay, a.smsPerDay) : 0; // same on both sides
-    return { id: String(i + 1).padStart(2, "0"), key: `part:${p.type}`, category: p.type, label: PART_LABEL[p.type], sourceService: "Your design", detail: isSized(p.type) ? p.tier : "", size, currentMonthlyCost: external, rowCount: 1, warnings: [], drivers };
+    return { id: String(i + 1).padStart(2, "0"), key: `part:${p.type}`, category: p.type, label: PART_LABEL[p.type], sourceService: "Your design", detail: isSized(p.type) ? p.tier : "", size, usageBased: false, currentMonthlyCost: external, rowCount: 1, warnings: [], drivers };
   });
   return Workload.parse({ provider: "design", format: "design", components, unparsed: [], excluded: [] });
 }

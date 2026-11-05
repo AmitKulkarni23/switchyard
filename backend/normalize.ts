@@ -55,17 +55,20 @@ export function normalize(input: { provider: string; format: Format; rows: Focus
     const size = { vcpu: 0, memoryGb: 0, storageGb: 0, objectStorageGb: 0, egressGb: 0 };
     const warnings: string[] = [];
     let detail = "";
+    let usageBased = false;
 
     if (m.sizing === "instance") {
       const hourRows = g.rows.filter((r) => isHours(r.ConsumedUnit) && (r.x_InstanceType || findInstanceType(`${r.x_UsageType ?? ""} ${r.ChargeDescription}`)));
       const acuHours = g.rows.filter((r) => /ACU-?H/i.test(r.ConsumedUnit ?? "")).reduce((s, r) => s + (r.ConsumedQuantity ?? 0), 0);
       // Aurora Serverless v2: 1 ACU ≈ 2 GiB memory with proportional CPU (ponytail: 0.25 vCPU per ACU, refine from AWS docs).
-      const spec = g.instanceType ? lookupInstance(g.instanceType) : acuHours > 0 ? { vcpu: 0.25, memoryGb: 2, acu: true } : undefined;
+      // ACU-hours win over an instance type: CUR labels these rows "db.serverless", which isn't in the catalog.
+      const spec = acuHours > 0 ? { vcpu: 0.25, memoryGb: 2, acu: true } : g.instanceType ? lookupInstance(g.instanceType) : undefined;
       if (!spec) {
         unparsed.push({ description: `${m.label}${g.instanceType ? ` (${g.instanceType})` : ""}`, service: g.rows[0]!.ServiceName, cost: round2(cost / months), reason: g.instanceType ? `instance type ${g.instanceType} not in catalog` : "instance type not found on bill" });
         continue;
       }
       const count = ("acu" in spec ? acuHours : hourRows.reduce((s, r) => s + (r.ConsumedQuantity ?? 0), 0)) / periodHours;
+      usageBased = "acu" in spec;
       size.vcpu = count * spec.vcpu;
       size.memoryGb = count * spec.memoryGb;
       size.storageGb = g.rows.filter((r) => /GB-?Mo/i.test(r.ConsumedUnit ?? "")).reduce((s, r) => s + (r.ConsumedQuantity ?? 0), 0) / months;
@@ -92,6 +95,7 @@ export function normalize(input: { provider: string; format: Format; rows: Focus
       sourceService: g.rows[0]!.ServiceName,
       detail,
       size,
+      usageBased,
       currentMonthlyCost: round2(cost / months),
       rowCount: g.rows.length,
       warnings,

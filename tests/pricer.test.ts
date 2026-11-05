@@ -35,6 +35,15 @@ test("prices each category by hand-calculated rates", () => {
   near(p.total.high, 20 + (432 + 154 - 20) + 11.6);
 });
 
+test("usage-based parts ignore the busy slider", () => {
+  const w = Workload.parse({ ...workload, components: [{ ...comp("01", "aws:rds:postgres", 89.28, { vcpu: 0.25, memoryGb: 2, storageGb: 10 }), category: "postgres", usageBased: true }] });
+  const p = price(w, Assumptions.parse({}));
+  // .25 × 20 + 2 × 10 + 10 × .15, at any utilization
+  near(line(p, "01").destination.low, 26.5);
+  near(line(p, "01").destination.high, 26.5);
+  expect(line(p, "01").formula).toBe("0.25 vCPU × $20 + 2 GB RAM × $10 + 10 GB volume × $0.15");
+});
+
 test("must keep holds a component at today's cost", () => {
   const p = price(workload, Assumptions.parse({ mustKeep: ["01"] }));
   expect(line(p, "01")).toMatchObject({ outcome: "kept", destination: { low: 414.72, high: 414.72 } });

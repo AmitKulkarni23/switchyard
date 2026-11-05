@@ -28,6 +28,19 @@ export function compare(workload: Workload, assumptions: Partial<Assumptions> = 
   });
 }
 
+/** For a bill: what the Railway estimate reads from the bill vs what it still assumes. Only parts that move count. */
+export function estimateBasis(workload: Workload, lines: Estimate["lines"]): { fromBill: string[]; assumed: string[] } {
+  const moving = workload.components.filter((c) => lines.some((l) => l.componentId === c.id && l.outcome === "moves"));
+  const assumed = moving.filter((c) => !c.usageBased && (c.size.vcpu || c.size.memoryGb));
+  const fromBill = [
+    assumed.length > 0 && "server sizes and hours",
+    moving.some((c) => c.usageBased) && "serverless database usage",
+    moving.some((c) => c.size.storageGb || c.size.objectStorageGb) && "storage",
+    moving.some((c) => c.size.egressGb) && "egress",
+  ].filter((s) => s !== false);
+  return { fromBill, assumed: assumed.map((c) => c.label) };
+}
+
 /** Railway vs AWS for one workload: a bill (AWS side is billed) or a design (both sides priced). */
 export function compareBoth(workload: Workload, assumptions: Partial<Assumptions> = {}): { railway: Estimate; aws: AwsPriced } {
   return { railway: compare(workload, { ...assumptions, destination: "railway" }), aws: priceAws(workload) };

@@ -46,6 +46,7 @@ export const Component = z.object({
   sourceService: z.string(),
   detail: z.string().default(""), // e.g. "3 × m5.xlarge"
   size: Size,
+  usageBased: z.boolean().default(false), // size is measured consumption (Aurora Serverless ACU-hours), so the busy slider doesn't apply
   currentMonthlyCost: z.number(),
   rowCount: z.number().int().positive(),
   warnings: z.array(z.string()).default([]),
