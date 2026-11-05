@@ -42,7 +42,10 @@ test("catalog knows common shapes and refuses to guess", () => {
   expect(lookupInstance("m5.xlarge")).toEqual({ vcpu: 4, memoryGb: 16 });
   expect(lookupInstance("db.r6g.large")).toEqual({ vcpu: 2, memoryGb: 16 });
   expect(lookupInstance("t4g.small")).toEqual({ vcpu: 2, memoryGb: 2 });
-  expect(lookupInstance("x2iedn.32xlarge")).toBeUndefined();
+  expect(lookupInstance("db.t3.micro")).toEqual({ vcpu: 2, memoryGb: 1 });
+  expect(lookupInstance("db.m7i.4xlarge")).toEqual({ vcpu: 16, memoryGb: 64 }); // not SQL Server's halved 8 vCPU
+  expect(lookupInstance("cache.m6g.2xlarge")).toEqual({ vcpu: 8, memoryGb: 26.04 });
+  expect(lookupInstance("zz9.large")).toBeUndefined();
 });
 
 test("OpenSearch lines on a bill are recognised and sized", async () => {
@@ -50,6 +53,9 @@ test("OpenSearch lines on a bill are recognised and sized", async () => {
   const { findInstanceType } = await import("../backend/data/catalog/aws-instances");
   expect(classify("AmazonES", "USE1-ESInstance:m6g.large.search $0.128 per m6g.large.search instance hour")).toBe("aws:opensearch");
   expect(findInstanceType("ESInstance:m6g.large.search")).toBe("m6g.large.search");
+  expect(findInstanceType("BoxUsage:x2iedn.32xlarge")).toBe("x2iedn.32xlarge");
+  expect(findInstanceType("BoxUsage:m7i-flex.large")).toBe("m7i-flex.large");
+  expect(findInstanceType("BoxUsage:m5.metal")).toBe("m5.metal");
   expect(lookupInstance("m6g.large.search")).toEqual({ vcpu: 2, memoryGb: 8 });
 });
 

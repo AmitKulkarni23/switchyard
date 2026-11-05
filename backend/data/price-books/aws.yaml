@@ -1,9 +1,10 @@
 # AWS us-east-1 on-demand rates used for the right-sized AWS column.
-# NOT YET VERIFIED against the live pages: entered from AWS's public pricing for a local preview.
-# Verify each rate against its source before shipping (task: AWS pricer).
+# `bun run prices` checks these against AWS's public price list and stamps `fetched`.
+# The price list lacks CloudFront's rates, the free allowances for egress and CloudFront, and SMS:
+# those were checked by hand on 2026-11-04 against the sources below and the pages named on their lines.
 destination: aws
 region: us-east-1
-fetched: unverified
+fetched: 2026-11-04
 sources:
   - https://aws.amazon.com/fargate/pricing/
   - https://aws.amazon.com/lambda/pricing/
@@ -19,8 +20,8 @@ sources:
   - https://aws.amazon.com/opensearch-service/pricing/
   - https://aws.amazon.com/kinesis/data-streams/pricing/
   - https://aws.amazon.com/ses/pricing/
-  - https://aws.amazon.com/sns/sms-pricing/
-  - https://aws.amazon.com/cloudfront/pricing/
+  - https://aws.amazon.com/end-user-messaging/pricing/
+  - https://aws.amazon.com/cloudfront/pricing/pay-as-you-go/
   - https://aws.amazon.com/api-gateway/pricing/
   - https://aws.amazon.com/cognito/pricing/
 rates:
@@ -34,8 +35,8 @@ rates:
   nat_hour: 0.045
   nat_gb_processed: 0.045
   egress_gb: 0.09
-  egress_free_gb: 100
-  rds_postgres_hour: { small: 0.032, medium: 0.065, large: 0.152 }   # db.t4g.small, db.t4g.medium, db.m6g.large
+  egress_free_gb: 100              # ec2/pricing/on-demand: "100 GB of free data transfer out to the internet"
+  rds_postgres_hour: { small: 0.032, medium: 0.065, large: 0.159 }   # db.t4g.small, db.t4g.medium, db.m6g.large
   rds_storage_gb_month: 0.115
   elasticache_hour: { small: 0.032, medium: 0.065, large: 0.149 }    # cache.t4g.small, cache.t4g.medium, cache.m6g.large
   dynamodb_write_million: 0.625
@@ -48,9 +49,11 @@ rates:
   kinesis_shard_hour: 0.015
   kinesis_put_unit_million: 0.014
   ses_email_thousand: 0.10
-  sms_us_message: 0.00645
-  cloudfront_gb: 0.085
-  cloudfront_https_10k: 0.01
+  sms_us_message: 0.01195          # End User Messaging SMS price CSV, US 10DLC: 0.00774 + 0.00421 carrier fee
+  cloudfront_gb: 0.085             # pay-as-you-go page, US "Next 9TB"
+  cloudfront_https_10k: 0.01       # pay-as-you-go page, US HTTPS per 10,000
+  cloudfront_free_gb: 1024         # always free: 1 TB out per month
+  cloudfront_free_requests: 10000000  # always free: 10M requests per month
   apigw_websocket_message_million: 1.00
   apigw_websocket_connection_minute_million: 0.25
   cognito_mau: 0.015

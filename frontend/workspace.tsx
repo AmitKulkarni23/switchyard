@@ -161,7 +161,7 @@ export function Workspace(props: Props) {
           )}
 
           <Box component="footer" sx={{ mt: 5, pt: 2, borderTop: `1px solid ${ink}`, color: muted, fontSize: 13, display: "grid", gap: 0.75, maxWidth: "80ch" }}>
-            <span>Railway rates from railway.com/pricing, fetched {railwayPriceBook.fetched}. AWS rates: {awsPriceBook.region} on-demand, <strong>not yet verified against AWS's pages</strong>.</span>
+            <span>Railway rates from railway.com/pricing, fetched {railwayPriceBook.fetched}. AWS rates: {awsPriceBook.region} on-demand, checked against AWS's price list {awsPriceBook.fetched}.</span>
             <span>SwitchYard is independent and not affiliated with Railway or Amazon Web Services.</span>
           </Box>
         </Box>

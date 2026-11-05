@@ -129,9 +129,9 @@ test("new parts price on both sides", async () => {
   const { railway, aws } = compareBoth(w);
   const rw = (label: string) => railway.lines.find((l) => l.label === label)!;
   const a = (label: string) => aws.lines.find((l) => l.label === label)!;
-  // email and SMS go through an external sender: the same cost on both sides (1000 × 30 × $0.10/1000 + 100 × 30 × $0.00645)
-  expect(rw("Email and SMS").destination.low).toBeCloseTo(3 + 19.35, 2);
-  expect(a("Email and SMS").cost.low).toBeCloseTo(3 + 19.35, 2);
+  // email and SMS go through an external sender: the same cost on both sides (1000 × 30 × $0.10/1000 + 100 × 30 × $0.01195)
+  expect(rw("Email and SMS").destination.low).toBeCloseTo(3 + 35.85, 2);
+  expect(a("Email and SMS").cost.low).toBeCloseTo(3 + 35.85, 2);
   expect(a("User sign-in").cost.low).toBeCloseTo(10000 * 0.015, 2); // 20k MAU, 10k free
   expect(rw("User sign-in").destination.low).toBe(0);
   expect(a("Search").uses).toBe("OpenSearch Service t3.small.search");
@@ -152,4 +152,11 @@ test("only numbers the design's parts use are shown", async () => {
   const p = (type: any, on = true) => ({ type, tier: "small" as const, why: "", on });
   expect(relevantNumbers([p("web-service"), p("relational-db")])).toEqual(["requestsPerDay", "kbPerRequest", "dataGb"]);
   expect(relevantNumbers([p("web-service"), p("messaging"), p("auth"), p("object-storage", false)])).toEqual(["requestsPerDay", "kbPerRequest", "emailsPerDay", "smsPerDay", "monthlyActiveUsers"]);
+});
+
+test("CloudFront charges only above its free tier", async () => {
+  const { priceAws } = await import("../backend/pricers/aws");
+  const cdn = (servedGb: number, requestsPerDay: number) => priceAws({ provider: "AWS", format: "design", unparsed: [], excluded: [], components: [{ id: "01", key: "part:cdn", category: "cdn", label: "CDN", sourceService: "", detail: "", size: { vcpu: 0, memoryGb: 0, storageGb: 0, objectStorageGb: 0, egressGb: 0 }, usageBased: false, currentMonthlyCost: 0, rowCount: 1, warnings: [], drivers: { servedGb, requestsPerDay } }] }).lines[0]!.cost.low;
+  expect(cdn(500, 100_000)).toBe(0);
+  expect(cdn(2024, 1_000_000)).toBeCloseTo(1000 * 0.085 + 2000 * 0.01, 6); // 1,000 GB and 20M requests over
 });

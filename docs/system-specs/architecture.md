@@ -72,6 +72,8 @@ Bills show provisioned capacity and how long it ran, not how busy it was. Zero r
 - The results page says what came **from the bill** and what is **still estimated** (`estimateBasis` in `compare.ts`).
 - On the results page, **"must keep"** services are toggles; toggling one recomputes the estimate (kept services stay at their current cost).
 
+Sizes for every AWS instance type come from `backend/data/catalog/aws-instances.json`, generated from AWS's public price list by `bun run prices`. The same script checks `aws.yaml` against that list and stamps its date. It runs by hand, never at request time. A bill's AWS column uses the bill's own amounts; `aws.yaml` only prices designs.
+
 Recomputing is pure and cheap (`price` + `compare` on the stored `Workload`), so it runs on every slider move or toggle without re-parsing the bill.
 
 ## Schemas (Zod, `backend/schema/`)

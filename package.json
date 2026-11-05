@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "bun --hot backend/server.ts",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "prices": "bun run scripts/aws-prices.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

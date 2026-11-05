@@ -14,7 +14,7 @@ export const AwsPriceBook = z.object({
     egress_gb: z.number(), egress_free_gb: z.number(), rds_postgres_hour: Tiered, rds_storage_gb_month: z.number(), elasticache_hour: Tiered,
     dynamodb_write_million: z.number(), dynamodb_read_million: z.number(), dynamodb_storage_gb_month: z.number(), sqs_request_million: z.number(), s3_storage_gb_month: z.number(),
     opensearch_hour: Tiered, opensearch_storage_gb_month: z.number(), kinesis_shard_hour: z.number(), kinesis_put_unit_million: z.number(),
-    ses_email_thousand: z.number(), sms_us_message: z.number(), cloudfront_gb: z.number(), cloudfront_https_10k: z.number(),
+    ses_email_thousand: z.number(), sms_us_message: z.number(), cloudfront_gb: z.number(), cloudfront_https_10k: z.number(), cloudfront_free_gb: z.number(), cloudfront_free_requests: z.number(),
     apigw_websocket_message_million: z.number(), apigw_websocket_connection_minute_million: z.number(), cognito_mau: z.number(), cognito_free_mau: z.number(),
   }),
 });
@@ -116,8 +116,8 @@ export function priceAws(w: Workload, r = awsPriceBook.rates): AwsPriced {
       }
       case "part:cdn": {
         const gb = Number(d.servedGb ?? 0), reqs = Number(d.requestsPerDay ?? 0) * 30;
-        const cost = gb * r.cloudfront_gb + (reqs / 10_000) * r.cloudfront_https_10k;
-        lines.push({ ...base, uses: "CloudFront", cost: one(cost), formula: `${Math.round(gb)} GB served + ${(reqs / 1e6).toFixed(1)}M HTTPS requests (replaces direct egress)` });
+        const cost = Math.max(0, gb - r.cloudfront_free_gb) * r.cloudfront_gb + (Math.max(0, reqs - r.cloudfront_free_requests) / 10_000) * r.cloudfront_https_10k;
+        lines.push({ ...base, uses: "CloudFront", cost: one(cost), formula: `${Math.round(gb)} GB served + ${(reqs / 1e6).toFixed(1)}M HTTPS requests, first 1 TB and 10M requests free (replaces direct egress)` });
         break;
       }
       case "part:realtime": {

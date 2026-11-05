@@ -1,6 +1,6 @@
 # Railway price book. Rates are copied verbatim from the sources below; pricers never hardcode rates.
 destination: railway
-fetched: 2026-11-01
+fetched: 2026-11-04
 sources:
   - https://railway.com/pricing
   - https://docs.railway.com/reference/pricing/plans
